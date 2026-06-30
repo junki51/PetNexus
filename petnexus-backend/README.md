@@ -118,6 +118,8 @@ Sprint 2 adds a PostgreSQL container, a verified GORM connection at startup, and
 
 No tables or migrations are created yet. Registration, login, JWT, password hashing, pet CRUD, QR sessions, authorization, clinic visits, timelines, notifications, and audit-log logic are deliberately not implemented.
 
+รายละเอียดสิ่งที่ทำแล้วและข้อมูลส่งต่องานอยู่ที่ [`docs/progress/README.md`](docs/progress/README.md)
+
 ## Recommended next step
 
 Follow `docs/database-plan.md` to design and add versioned PostgreSQL migrations with `golang-migrate`. Keep schema work separate from authentication and feature APIs.
