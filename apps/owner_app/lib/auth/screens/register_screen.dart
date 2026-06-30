@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:owner_app/layout/responsive_layout.dart';
 import '../controllers/register_controller.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -40,7 +41,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
           children: [
             // --- Header: Back Button & Title ---
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: EdgeInsets.symmetric(
+                horizontal: context.nw(16), 
+                vertical: context.nh(8)
+                ),
               child: Row(
                 children: [
                   CircleAvatar(
@@ -50,11 +54,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  const Text(
+                  SizedBox(width: context.nw(16)),
+                  Text(
                     'สร้างบัญชีใหม่',
                     style: TextStyle(
-                      fontSize: 20,
+                      fontSize: context.nf(20),
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF2D3748),
                     ),
@@ -67,24 +71,24 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Expanded(
               child: Container(
                 width: double.infinity,
-                margin: const EdgeInsets.only(top: 20),
+                margin:EdgeInsets.all(context.nh(20)),
                 decoration: BoxDecoration(
                   color: bgBottomColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.elliptical(250, 50),
-                    topRight: Radius.elliptical(250, 50),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.elliptical(context.nw(250), context.nh(50)),
+                    topRight: Radius.elliptical(context.nw(250), context.nh(50)),
                   ),
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(32.0),
+                  padding: EdgeInsets.all(context.nw(32)),
                   child: Column(
                     children: [
-                      const SizedBox(height: 20),
+                      SizedBox(height: context.nh(20)),
                       // Logo
                       RichText(
                         text: TextSpan(
-                          style: const TextStyle(
-                            fontSize: 42,
+                          style: TextStyle(
+                            fontSize: context.nf(42),
                             fontWeight: FontWeight.bold,
                           ),
                           children: [
@@ -99,7 +103,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 40),
+                      SizedBox(height: context.nh(40)),
 
                       // Email Field
                       _buildTextField(
@@ -107,7 +111,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         hint: 'กรอกอีเมล*',
                         icon: Icons.email_outlined,
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: context.nh(20)),
 
                       // Password Field (พร้อมปุ่มเปิด/ปิดตา)
                       ListenableBuilder(
@@ -122,7 +126,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               _controller.togglePasswordVisibility,
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      SizedBox(height: context.nh(20)),
 
                       // Confirm Password Field (แยก State ตาชัดเจน)
                       ListenableBuilder(
@@ -147,7 +151,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             'มีบัญชีอยู่แล้ว?',
                             style: TextStyle(
                               color: Colors.blue.shade700,
-                              fontSize: 13,
+                              fontSize: context.nf(13),
                             ),
                           ),
                         ),
@@ -166,11 +170,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             ),
-                            const Expanded(
+                            Expanded(
                               child: Text(
                                 'ฉันยอมรับเงื่อนไขในการใช้งานและนโยบายความเป็นส่วนตัว',
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: context.nf(12),
                                   color: Colors.blueGrey,
                                 ),
                               ),
@@ -178,7 +182,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 30),
+                      SizedBox(height: context.nh(30)),
 
                       // Register Button
                       ListenableBuilder(
@@ -188,7 +192,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               _controller.state == RegisterState.loading;
                           return SizedBox(
                             width: double.infinity,
-                            height: 56,
+                            height: context.nh(56),
                             child: ElevatedButton(
                               onPressed:
                                   (isLoading || !_controller.isAcceptedTerms)
@@ -202,27 +206,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                 backgroundColor: primaryTeal,
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(28),
+                                  borderRadius: BorderRadius.circular(context.nw(28)),
                                 ),
                                 elevation: 4,
                                 shadowColor: primaryTeal.withValues(alpha: 0.4),
                               ),
                               child: isLoading
-                                  ? const CircularProgressIndicator(
-                                      color: Colors.white,
-                                    )
-                                  : const Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
+                                  ? const CircularProgressIndicator(color: Colors.white)
+                                  : Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.pets, size: 24),
-                                        SizedBox(width: 12),
+                                        Icon(Icons.pets, size: context.nw(24)),
+                                        SizedBox(width: context.nw(12)),
                                         Text(
-                                          'สร้างบัญชีใหม่',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                          'สร้างบัญชีใหม่', 
+                                          style: TextStyle(fontSize: context.nf(18), fontWeight: FontWeight.bold),
                                         ),
                                       ],
                                     ),
@@ -253,12 +251,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(context.nw(30)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
+            blurRadius: context.nw(15),
+            offset: Offset(0, context.nh(5)),
           ),
         ],
       ),
@@ -281,9 +279,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 )
               : null,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 16,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: context.nw(20), 
+            vertical: context.nh(16),
           ),
         ),
       ),
