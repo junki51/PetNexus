@@ -1,0 +1,17 @@
+# Flutter
+.dart_tool/
+build/
+
+# React
+node_modules/
+dist/
+
+# Backend
+node_modules/
+.env
+
+# VSCode
+.vscode/
+
+# macOS
+.DS_Store
