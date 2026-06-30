@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:owner_app/auth/screens/register_screen.dart';
 import '../controllers/login_controller.dart';
+import '../../layout/responsive_layout.dart';
+
+// นำเข้า Extension (แก้ไข path ให้ตรงกับโปรเจกต์ของคุณ)
+// import 'path_to_your_extension/responsive_context.dart'; 
 
 class FirstScreen extends StatefulWidget {
   const FirstScreen({super.key});
@@ -39,8 +43,8 @@ class _FirstScreenState extends State<FirstScreen> {
               child: Center(
                 child: RichText(
                   text: TextSpan(
-                    style: const TextStyle(
-                      fontSize: 42,
+                    style: TextStyle(
+                      fontSize: context.nf(42), // ปรับขนาดฟอนต์ Logo
                       fontWeight: FontWeight.bold,
                       letterSpacing: -1.0,
                     ),
@@ -60,24 +64,24 @@ class _FirstScreenState extends State<FirstScreen> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: bgBottomColor,
-                  borderRadius: const BorderRadius.only(
-                    // ทำเส้นโค้งด้านบน
-                    topLeft: Radius.elliptical(250, 60),
-                    topRight: Radius.elliptical(250, 60),
+                  borderRadius: BorderRadius.only(
+                    // ทำเส้นโค้งด้านบนแบบ Responsive
+                    topLeft: Radius.elliptical(context.nw(250), context.nh(60)),
+                    topRight: Radius.elliptical(context.nw(250), context.nh(60)),
                   ),
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                  padding: EdgeInsets.symmetric(horizontal: context.nw(32.0)), // ปรับความห่างซ้าย-ขวา
                   child: SingleChildScrollView(
                     child: Column(
                       children: [
-                        const SizedBox(height: 40),
-                        
+                        SizedBox(height: context.nh(40)), // ปรับระยะห่างแนวตั้ง
+
                         // Subtitle
                         Text(
                           'Everything your pet needs,',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: context.nf(16), // ปรับฟอนต์ข้อความอธิบาย
                             fontWeight: FontWeight.w600,
                             color: textDark,
                           ),
@@ -85,12 +89,12 @@ class _FirstScreenState extends State<FirstScreen> {
                         Text(
                           'all in one place.',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: context.nf(16),
                             fontWeight: FontWeight.w600,
                             color: primaryTeal,
                           ),
                         ),
-                        const SizedBox(height: 40),
+                        SizedBox(height: context.nh(40)),
 
                         // ใช้ ListenableBuilder เพื่ออัปเดต UI เฉพาะจุดที่ State เปลี่ยน
                         ListenableBuilder(
@@ -103,7 +107,7 @@ class _FirstScreenState extends State<FirstScreen> {
                                 // Login Button
                                 SizedBox(
                                   width: double.infinity,
-                                  height: 56,
+                                  height: context.nh(56), // ปรับความสูงปุ่ม
                                   child: ElevatedButton(
                                     onPressed: isLoading ? null : _controller.loginWithEmail,
                                     style: ElevatedButton.styleFrom(
@@ -111,27 +115,27 @@ class _FirstScreenState extends State<FirstScreen> {
                                       foregroundColor: Colors.white,
                                       elevation: 0,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(28),
+                                        borderRadius: BorderRadius.circular(context.nh(28)), // ล้อตามความสูงปุ่มที่เปลี่ยนไป
                                       ),
                                     ),
                                     child: isLoading
-                                        ? const SizedBox(
-                                            width: 24,
-                                            height: 24,
-                                            child: CircularProgressIndicator(
+                                        ? SizedBox(
+                                            width: context.nw(24),
+                                            height: context.nw(24),
+                                            child: const CircularProgressIndicator(
                                               color: Colors.white,
                                               strokeWidth: 3,
                                             ),
                                           )
-                                        : const Row(
+                                        : Row(
                                             mainAxisAlignment: MainAxisAlignment.center,
                                             children: [
-                                              Icon(Icons.pets, size: 24),
-                                              SizedBox(width: 12),
+                                              Icon(Icons.pets, size: context.nf(24)), // ปรับขนาดไอคอน
+                                              SizedBox(width: context.nw(12)),
                                               Text(
                                                 'เข้าสู่ระบบ',
                                                 style: TextStyle(
-                                                  fontSize: 18,
+                                                  fontSize: context.nf(18),
                                                   fontWeight: FontWeight.bold,
                                                 ),
                                               ),
@@ -139,12 +143,12 @@ class _FirstScreenState extends State<FirstScreen> {
                                           ),
                                   ),
                                 ),
-                                const SizedBox(height: 16),
+                                SizedBox(height: context.nh(16)),
 
                                 // Create Account Button
                                 SizedBox(
                                   width: double.infinity,
-                                  height: 56,
+                                  height: context.nh(56),
                                   child: OutlinedButton(
                                     onPressed: isLoading ? null : () {
                                       Navigator.push(context, MaterialPageRoute(builder: (context) => const RegisterScreen()));
@@ -155,13 +159,13 @@ class _FirstScreenState extends State<FirstScreen> {
                                       side: const BorderSide(color: Colors.black12),
                                       elevation: 0,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(28),
+                                        borderRadius: BorderRadius.circular(context.nh(28)),
                                       ),
                                     ),
-                                    child: const Text(
+                                    child: Text(
                                       'สร้างบัญชีใหม่',
                                       style: TextStyle(
-                                        fontSize: 18,
+                                        fontSize: context.nf(18),
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
@@ -171,42 +175,45 @@ class _FirstScreenState extends State<FirstScreen> {
                             );
                           },
                         ),
-                        const SizedBox(height: 40),
+                        SizedBox(height: context.nh(40)),
 
                         // Divider
-                        const Text(
+                        Text(
                           'หรือเข้าสู่ระบบด้วย',
                           style: TextStyle(
                             color: Colors.grey,
-                            fontSize: 14,
+                            fontSize: context.nf(14),
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: context.nh(24)),
 
                         // Social Login Buttons
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             _buildSocialButton(
-                              icon: Icons.g_mobiledata, // เปลี่ยนเป็นโลโก้จริงด้วย flutter_svg ได้
+                              context: context, // ส่ง context เข้าไปใช้งาน
+                              icon: Icons.g_mobiledata, 
                               color: Colors.red,
                               onTap: () => _controller.loginWithSocial('Google'),
                             ),
-                            const SizedBox(width: 24),
+                            SizedBox(width: context.nw(24)),
                             _buildSocialButton(
+                              context: context,
                               icon: Icons.apple,
                               color: Colors.black,
                               onTap: () => _controller.loginWithSocial('Apple'),
                             ),
-                            const SizedBox(width: 24),
+                            SizedBox(width: context.nw(24)),
                             _buildSocialButton(
+                              context: context,
                               icon: Icons.facebook,
                               color: Colors.blue,
                               onTap: () => _controller.loginWithSocial('Facebook'),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 40),
+                        SizedBox(height: context.nh(40)),
                       ],
                     ),
                   ),
@@ -219,8 +226,9 @@ class _FirstScreenState extends State<FirstScreen> {
     );
   }
 
-  // Widget ย่อยสำหรับปุ่ม Social เพื่อลดความซ้ำซ้อนของโค้ด
+  // Widget ย่อยสำหรับปุ่ม Social เพิ่มพารามิเตอร์ BuildContext context เข้าไป
   Widget _buildSocialButton({
+    required BuildContext context,
     required IconData icon,
     required Color color,
     required VoidCallback onTap,
@@ -232,8 +240,8 @@ class _FirstScreenState extends State<FirstScreen> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            blurRadius: context.nw(10), // ปรับระยะเบลอตามสัดส่วนจอ
+            offset: Offset(0, context.nh(4)), // ปรับตำแหน่งเงาตามความสูง
           ),
         ],
       ),
@@ -243,8 +251,8 @@ class _FirstScreenState extends State<FirstScreen> {
           borderRadius: BorderRadius.circular(50),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Icon(icon, color: color, size: 36),
+            padding: EdgeInsets.all(context.nw(12.0)), // ปรับ Padding ด้านในปุ่มวงกลม
+            child: Icon(icon, color: color, size: context.nf(36)), // ปรับขนาดไอคอนโซเชียล
           ),
         ),
       ),
