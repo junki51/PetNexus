@@ -4,7 +4,7 @@ PetNexus is a digital pet passport and owner-controlled pet identity platform. T
 
 ## Stack
 
-Sprint 1 uses Go, Gin, and godotenv. PostgreSQL, GORM, JWT, bcrypt, and golang-migrate are planned for later sprints and are intentionally inactive.
+Sprint 2 uses Go, Gin, godotenv, PostgreSQL, GORM, and Docker Compose. JWT, bcrypt, and golang-migrate are reserved for later sprints.
 
 ## Architecture
 
@@ -28,7 +28,12 @@ handler -> service -> repository -> database
 
 ## Prerequisites
 
-Install Go 1.22 or newer, then open a terminal in this directory.
+Install:
+
+- Go 1.22 or newer
+- Docker Desktop with Docker Compose
+
+Then open a terminal in this directory.
 
 ## Install dependencies
 
@@ -42,21 +47,40 @@ Optionally copy `.env.example` to `.env`. On PowerShell:
 Copy-Item .env.example .env
 ```
 
-## Run
+The example settings match the local PostgreSQL container in `docker-compose.yml`.
+
+## Start PostgreSQL
+
+```bash
+docker compose up -d
+```
+
+Check that the container is running and healthy:
+
+```bash
+docker compose ps
+```
+
+The container exposes PostgreSQL on `localhost:5432` and stores its data in a named Docker volume.
+
+## Run the backend
 
 ```bash
 go run ./cmd/api
 ```
 
-The default address is `http://localhost:8080`. Set `PORT` to use another port.
+The backend connects to PostgreSQL before starting the HTTP server. It exits with a clear error if the database is unavailable.
 
-## Test the health endpoint
+The default API address is `http://localhost:8080`. Set `PORT` to use another port.
+
+## Test the health endpoints
 
 ```bash
 curl http://localhost:8080/health
+curl http://localhost:8080/health/db
 ```
 
-Expected response:
+Expected response from `GET /health`:
 
 ```json
 {
@@ -69,12 +93,31 @@ Expected response:
 }
 ```
 
+Expected response from `GET /health/db`:
+
+```json
+{
+  "success": true,
+  "message": "Database connection is healthy",
+  "data": {
+    "database": "postgresql",
+    "status": "connected"
+  }
+}
+```
+
+Stop the local database when finished:
+
+```bash
+docker compose down
+```
+
 ## Current status
 
-Sprint 1 provides the server foundation, environment loading, consistent response helpers, route registration, and `/health` only.
+Sprint 2 adds a PostgreSQL container, a verified GORM connection at startup, and `GET /health/db`. The original `GET /health` endpoint remains available.
 
-Registration, login, JWT, password hashing, PostgreSQL/GORM, pet CRUD, QR sessions, authorization, clinic visits, timelines, notifications, and audit-log logic are deliberately not implemented. No fake security behavior is included.
+No tables or migrations are created yet. Registration, login, JWT, password hashing, pet CRUD, QR sessions, authorization, clinic visits, timelines, notifications, and audit-log logic are deliberately not implemented.
 
 ## Recommended next step
 
-Complete the database foundation in `docs/database-plan.md`: add PostgreSQL, GORM, and golang-migrate while keeping database access inside repositories.
+Follow `docs/database-plan.md` to design and add versioned PostgreSQL migrations with `golang-migrate`. Keep schema work separate from authentication and feature APIs.

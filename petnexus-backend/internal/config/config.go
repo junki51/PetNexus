@@ -7,8 +7,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Config contains runtime settings. Database and JWT values are prepared for
-// later sprints but are not used by the Sprint 1 application.
+// Config contains runtime settings. Database values are used by Sprint 2,
+// while JWT values remain placeholders for a later authentication sprint.
 type Config struct {
 	AppEnv       string
 	Port         string
