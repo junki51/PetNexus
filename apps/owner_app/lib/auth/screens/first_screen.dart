@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:owner_app/auth/screens/login_screen.dart';
 import 'package:owner_app/auth/screens/register_screen.dart';
 import '../controllers/login_controller.dart';
 import '../../layout/responsive_layout.dart';
@@ -109,7 +110,9 @@ class _FirstScreenState extends State<FirstScreen> {
                                   width: double.infinity,
                                   height: context.nh(56), // ปรับความสูงปุ่ม
                                   child: ElevatedButton(
-                                    onPressed: isLoading ? null : _controller.loginWithEmail,
+                                    onPressed: isLoading ? null : () {
+                                      Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
+                                    },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: primaryTeal,
                                       foregroundColor: Colors.white,

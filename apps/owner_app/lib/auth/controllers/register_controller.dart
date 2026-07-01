@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import '../../api_config.dart';
 
 enum RegisterState { initial, loading, success, error }
 
@@ -38,7 +42,15 @@ class RegisterController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // TODO: เชื่อมต่อ API ลงทะเบียนจริงที่นี่
+      final response = await http.post(
+        Uri.parse(ApiConfig.register), // เรียกใช้ผ่าน ApiConfig.register
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'email': email,
+          'password': password,
+          'password_confirmation': confirmPassword,
+        }),
+      );
       await Future.delayed(const Duration(seconds: 2));
       _state = RegisterState.success;
     } catch (e) {
