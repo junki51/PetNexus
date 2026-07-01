@@ -1,14 +1,16 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import '../../api_config.dart';
+import '../../services/register_service.dart';
 
 enum RegisterState { initial, loading, success, error }
 
 class RegisterController extends ChangeNotifier {
+
+  final RegisterService _registerService = RegisterService();
   RegisterState _state = RegisterState.initial;
   RegisterState get state => _state;
+
+  String? _errorMessage;
+  String? get errorMessage => _errorMessage;
 
   // แยก State การมองเห็นรหัสผ่านออกจากกัน
   bool _isPasswordVisible = false;
@@ -35,27 +37,38 @@ class RegisterController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> register(String email, String password, String confirmPassword) async {
-    if (!_isAcceptedTerms) return; // หรือแสดง Error
+  Future<bool> register(String email, String password, String confirmPassword) async {
+    if (password != confirmPassword) {
+      _errorMessage = "รหัสผ่านไม่ตรงกัน";
+      _setState(RegisterState.error);
+      return false;
+    }
 
-    _state = RegisterState.loading;
-    notifyListeners();
+    _setState(RegisterState.loading);;
 
     try {
-      final response = await http.post(
-        Uri.parse(ApiConfig.register), // เรียกใช้ผ่าน ApiConfig.register
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-          'password_confirmation': confirmPassword,
-        }),
+      final result = await _registerService.register(
+        email: email,
+        password: password,
+        confirmPassword: confirmPassword,
       );
-      await Future.delayed(const Duration(seconds: 2));
-      _state = RegisterState.success;
+      if (result["success"]) {
+        _setState(RegisterState.success);
+        return true;
+      }
+
+      _errorMessage = result["message"];
+      _setState(RegisterState.error);
+      return false;
+
     } catch (e) {
-      _state = RegisterState.error;
+      _errorMessage = "เชื่อมต่อเซิร์ฟเวอร์ไม่ได้: $e";
+      _setState(RegisterState.error);
+      return false;
     }
-    notifyListeners();
+  }
+  void _setState(RegisterState newState) {
+    _state = newState;
+    notifyListeners(); // แจ้งเตือน UI ให้ Re-build
   }
 }
