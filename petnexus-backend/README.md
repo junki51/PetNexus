@@ -73,6 +73,16 @@ The container exposes PostgreSQL on `localhost:5432` and stores its data in a na
 
 ## Run Sprint 3 migrations
 
+The backend automatically runs a safe, idempotent SQL startup migration before
+registering routes. It ensures `pgcrypto`, the `user_role` enum, the `users`
+table, and the `idx_users_email_unique` unique index. Startup stops immediately
+with a clear error if schema migration fails. This supports fresh Render
+PostgreSQL databases and avoids GORM `AutoMigrate` constraint rewrites on
+existing databases.
+
+The commands below remain available when you want to apply or inspect the SQL
+manually during local development.
+
 First confirm the container name:
 
 ```powershell

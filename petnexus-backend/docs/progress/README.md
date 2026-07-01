@@ -13,6 +13,7 @@
 ## Deployment updates
 
 - [Render: DATABASE_URL support](./render-database-url.md)
+- [Render: startup schema migration](./render-startup-schema-migration.md)
 
 ## วิธีใช้งาน
 
