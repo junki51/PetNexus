@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:owner_app/auth/screens/login_screen.dart';
-import 'package:owner_app/auth/screens/register_screen.dart';
-import '../controllers/login_controller.dart';
-import '../../layout/responsive_layout.dart';
+import 'package:owner_app/features/auth/screens/login_screen.dart';
+import 'package:owner_app/features/auth/screens/register_screen.dart';
+import 'package:owner_app/features/auth/controllers/auth_controller.dart';
+import '../../../layout/responsive_layout.dart';
 
 // นำเข้า Extension (แก้ไข path ให้ตรงกับโปรเจกต์ของคุณ)
 // import 'path_to_your_extension/responsive_context.dart'; 
@@ -16,7 +16,7 @@ class FirstScreen extends StatefulWidget {
 
 class _FirstScreenState extends State<FirstScreen> {
   // สร้าง Instance ของ Controller
-  final LoginController _controller = LoginController();
+  final AuthController _controller = AuthController();
 
   // กำหนดสีตาม Design System
   final Color primaryTeal = const Color(0xFF38A3A5);
@@ -198,21 +198,33 @@ class _FirstScreenState extends State<FirstScreen> {
                               context: context, // ส่ง context เข้าไปใช้งาน
                               icon: Icons.g_mobiledata, 
                               color: Colors.red,
-                              onTap: () => _controller.loginWithSocial('Google'),
+                              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Coming Soon"),
+                                ),
+                              ),
                             ),
                             SizedBox(width: context.nw(24)),
                             _buildSocialButton(
                               context: context,
                               icon: Icons.apple,
                               color: Colors.black,
-                              onTap: () => _controller.loginWithSocial('Apple'),
+                              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Coming Soon"),
+                                ),
+                              ),
                             ),
                             SizedBox(width: context.nw(24)),
                             _buildSocialButton(
                               context: context,
                               icon: Icons.facebook,
                               color: Colors.blue,
-                              onTap: () => _controller.loginWithSocial('Facebook'),
+                              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Coming Soon"),
+                                ),
+                              ),
                             ),
                           ],
                         ),

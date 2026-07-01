@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
-import "package:owner_app/auth/screens/first_screen.dart";
+import 'package:provider/provider.dart';
+
+import 'features/auth/controllers/auth_controller.dart';
+import 'features/auth/screens/auth_gate.dart';
 
 void main() {
-  // บังคับให้ Flutter ผูก Widget Tree ให้เสร็จก่อนรันแอป (จำเป็นถ้ามี Initialized Service อื่นๆ)
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (_) => AuthController(),
+        ),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -14,19 +23,17 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'PetNexus',
-      debugShowCheckedModeBanner: false, // ปิดป้ายกำกับ Debug มุมขวาบน
-      theme: ThemeData(
-        // ใช้สี Teal ของคุณเป็นสีหลักของแอป
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF38A3A5),
-        ),
-        useMaterial3: true, // เปิดใช้งาน Material 3
-        // แนะนำให้เพิ่มฟอนต์ภาษาไทย เช่น 'Kanit' หรือ 'Prompt' ใน pubspec.yaml แล้วมากำหนดตรงนี้
-        // fontFamily: 'Kanit', 
-      ),
-      // กำหนดให้ LoginScreen เป็นหน้าแรกที่แอปจะแสดงผล
-      home: const FirstScreen(), 
+      debugShowCheckedModeBanner: false,
+      title: "PetNexus",
+
+      home: const AuthGate(),
+
+      routes: {
+        "/auth": (_) => const AuthGate(),
+        // "/login": (_) => const LoginScreen(),
+        // "/register": (_) => const RegisterScreen(),
+        // "/home": (_) => const HomeScreen(),
+      },
     );
   }
 }

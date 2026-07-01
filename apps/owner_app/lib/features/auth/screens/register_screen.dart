@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:owner_app/auth/widgets/custom_input_field.dart';
+import 'package:owner_app/features/auth/widgets/custom_input_field.dart';
 import 'package:owner_app/layout/responsive_layout.dart';
-import '../controllers/register_controller.dart';
+import 'package:owner_app/features/auth/controllers/auth_controller.dart';
+import 'package:provider/provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -11,7 +12,7 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final RegisterController _controller = RegisterController();
+  late AuthController _controller;
 
   // Controllers สำหรับดึงค่าจากช่องกรอก
   final TextEditingController _emailController = TextEditingController();
@@ -28,12 +29,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
-    _controller.dispose();
     super.dispose();
+  }
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
   }
 
   @override
   Widget build(BuildContext context) {
+    final controller = context.watch<AuthController>();
     return Scaffold(
       backgroundColor: bgTopColor,
       body: SafeArea(
@@ -125,9 +131,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           hintText: 'อย่างน้อย 8 ตัวอักษร*',
                           prefixIcon: Icons.lock_outline,
                           isPassword: true,
-                          obscureText: !_controller.isPasswordVisible,
-                          onToggleVisibility:
-                              _controller.togglePasswordVisibility,
+                          obscureText: !controller.isPasswordVisible,
+                          onToggleVisibility: controller.togglePasswordVisibility,
                         ),
                       ),
                       SizedBox(height: context.nh(20)),
@@ -140,9 +145,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           hintText: 'ยืนยันรหัสผ่าน*',
                           prefixIcon: Icons.lock_clock_outlined,
                           isPassword: true,
-                          obscureText: !_controller.isConfirmPasswordVisible,
-                          onToggleVisibility:
-                              _controller.toggleConfirmPasswordVisibility,
+                          obscureText: !controller.isConfirmPasswordVisible,
+                          onToggleVisibility: controller.toggleConfirmPasswordVisibility,
                         ),
                       ),
 
@@ -167,8 +171,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         builder: (context, _) => Row(
                           children: [
                             Checkbox(
-                              value: _controller.isAcceptedTerms,
-                              onChanged: _controller.toggleAcceptedTerms,
+                              value: controller.acceptedTerms,
+                              onChanged: controller.toggleAcceptedTerms,
                               activeColor: primaryTeal,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(4),
@@ -193,37 +197,86 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         listenable: _controller,
                         builder: (context, _) {
                           final isLoading =
-                              _controller.state == RegisterState.loading;
+                              controller.state == AuthState.loading;
                           return SizedBox(
                             width: double.infinity,
                             height: context.nh(56),
                             child: ElevatedButton(
-                              onPressed:
-                                  (isLoading || !_controller.isAcceptedTerms)
-                                  ? null
-                                  : () {
-                                      final emailInput = _emailController.text.trim();
-                                      final passwordInput =
-                                          _passwordController.text;
-                                      final confirmPasswordInput =
-                                          _confirmPasswordController.text;
-                                      _controller.register(
-                                        emailInput,
-                                        passwordInput,
-                                        confirmPasswordInput,
+                              onPressed: controller.state == AuthState.loading
+                                ? null
+                                : () async {
+
+                                    final email =
+                                        _emailController.text.trim();
+
+                                    final password =
+                                        _passwordController.text;
+
+                                    final confirmPassword =
+                                        _confirmPasswordController.text;
+
+                                    if (email.isEmpty ||
+                                        password.isEmpty ||
+                                        confirmPassword.isEmpty) {
+
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "กรุณากรอกข้อมูลให้ครบ",
+                                          ),
+                                        ),
                                       );
-                                    },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: primaryTeal,
-                                foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    context.nw(28),
-                                  ),
-                                ),
-                                elevation: 4,
-                                shadowColor: primaryTeal.withValues(alpha: 0.4),
-                              ),
+
+                                      return;
+                                    }
+
+                                    if (!controller.acceptedTerms) {
+
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                          content: Text(
+                                            "กรุณายอมรับเงื่อนไขการใช้งาน",
+                                          ),
+                                        ),
+                                      );
+
+                                      return;
+                                    }
+
+                                    final navigator = Navigator.of(context);
+                                    final messenger = ScaffoldMessenger.of(context);
+
+                                    final success =
+                                        await controller.register(
+                                      email: email,
+                                      password: password,
+                                      confirmPassword: confirmPassword,
+                                    );
+
+                                    if (!mounted) return;
+
+                                    if (success) {
+
+                                      navigator.pushReplacementNamed(
+                                        "/home",
+                                      );
+
+                                    } else {
+
+                                      messenger.showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            controller.errorMessage ??
+                                                "Register Failed",
+                                          ),
+                                        ),
+                                      );
+
+                                    }
+
+                                  },
                               child: isLoading
                                   ? const CircularProgressIndicator(
                                       color: Colors.white,
