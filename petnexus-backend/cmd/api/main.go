@@ -22,6 +22,11 @@ func main() {
 	}
 	log.Println("database connected successfully")
 
+	if err := database.RunMigrations(db); err != nil {
+		log.Fatalf("database migration failed: %v", err)
+	}
+	log.Println("database migration completed successfully")
+
 	userRepo := repositories.NewUserRepository(db)
 	authService := services.NewAuthService(userRepo, cfg)
 	authHandler := handlers.NewAuthHandler(authService)
