@@ -4,6 +4,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/driver/postgres"
@@ -17,15 +18,7 @@ const pingTimeout = 5 * time.Second
 // ConnectPostgres opens and verifies a PostgreSQL connection using the
 // environment-backed application config.
 func ConnectPostgres(cfg config.Config) (*gorm.DB, error) {
-	dsn := fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		cfg.DBHost,
-		cfg.DBPort,
-		cfg.DBUser,
-		cfg.DBPassword,
-		cfg.DBName,
-		cfg.DBSSLMode,
-	)
+	dsn := buildPostgresDSN(cfg)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		TranslateError: true,
@@ -39,6 +32,22 @@ func ConnectPostgres(cfg config.Config) (*gorm.DB, error) {
 	}
 
 	return db, nil
+}
+
+func buildPostgresDSN(cfg config.Config) string {
+	if databaseURL := strings.TrimSpace(cfg.DatabaseURL); databaseURL != "" {
+		return databaseURL
+	}
+
+	return fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		cfg.DBHost,
+		cfg.DBPort,
+		cfg.DBUser,
+		cfg.DBPassword,
+		cfg.DBName,
+		cfg.DBSSLMode,
+	)
 }
 
 // PingPostgres verifies that GORM's underlying SQL connection can reach

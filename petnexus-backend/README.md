@@ -50,6 +50,13 @@ Copy-Item .env.example .env
 The example settings match the local PostgreSQL container in `docker-compose.yml`.
 Use a strong, private `JWT_SECRET` outside local development. Never commit a real secret to `.env.example`.
 
+### Database configuration
+
+- Render/production: set `DATABASE_URL` to the managed PostgreSQL connection string.
+- Local Docker: leave `DATABASE_URL` empty and continue using `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`, and `DB_SSLMODE=disable`.
+
+When both are present, `DATABASE_URL` takes precedence. The `GET /health/db` endpoint checks whichever connection is active.
+
 ## Start PostgreSQL
 
 ```bash
