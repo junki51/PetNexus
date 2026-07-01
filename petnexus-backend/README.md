@@ -4,7 +4,7 @@ PetNexus is a digital pet passport and owner-controlled pet identity platform. T
 
 ## Stack
 
-Sprint 2 uses Go, Gin, godotenv, PostgreSQL, GORM, and Docker Compose. JWT, bcrypt, and golang-migrate are reserved for later sprints.
+Sprint 3 uses Go, Gin, godotenv, PostgreSQL, GORM, Docker Compose, bcrypt, and JWT access tokens. Versioned migrations are currently applied with `psql`; golang-migrate can be introduced in a later database-tooling sprint.
 
 ## Architecture
 
@@ -48,6 +48,7 @@ Copy-Item .env.example .env
 ```
 
 The example settings match the local PostgreSQL container in `docker-compose.yml`.
+Use a strong, private `JWT_SECRET` outside local development. Never commit a real secret to `.env.example`.
 
 ## Start PostgreSQL
 
@@ -62,6 +63,23 @@ docker compose ps
 ```
 
 The container exposes PostgreSQL on `localhost:5432` and stores its data in a named Docker volume.
+
+## Run Sprint 3 migrations
+
+First confirm the container name:
+
+```powershell
+docker ps
+```
+
+If the container is named `petnexus-postgres`, run:
+
+```powershell
+Get-Content .\migrations\001_create_enums.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
+Get-Content .\migrations\002_create_users.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
+```
+
+If Docker shows a different container name, replace `petnexus-postgres` in both commands. These migrations create only `user_role` and `users`.
 
 ## Run the backend
 
@@ -112,14 +130,67 @@ Stop the local database when finished:
 docker compose down
 ```
 
+## Test authentication
+
+PowerShell has a `curl` alias on some versions, so the examples call `curl.exe` explicitly.
+
+### Register an owner
+
+```powershell
+curl.exe -X POST http://localhost:8080/api/auth/register `
+  -H "Content-Type: application/json" `
+  -d "{\"email\":\"owner@example.com\",\"phone\":\"0812345678\",\"password\":\"password123\",\"role\":\"owner\"}"
+```
+
+Expected: HTTP 201, `success: true`, a safe user object, and `accessToken`. The response must not contain `passwordHash`.
+
+Run the same command again to verify it returns HTTP 409 with `EMAIL_ALREADY_EXISTS`.
+
+### Login
+
+```powershell
+curl.exe -X POST http://localhost:8080/api/auth/login `
+  -H "Content-Type: application/json" `
+  -d "{\"email\":\"owner@example.com\",\"password\":\"password123\"}"
+```
+
+Expected: `success: true` and a new `accessToken`.
+
+### Get the current user
+
+Copy the login token into the command:
+
+```powershell
+curl.exe http://localhost:8080/api/me `
+  -H "Authorization: Bearer <access_token>"
+```
+
+Expected: the current user without `passwordHash`.
+
+Without a token, the same endpoint must return HTTP 401:
+
+```powershell
+curl.exe http://localhost:8080/api/me
+```
+
+### Verify public admin registration is blocked
+
+```powershell
+curl.exe -X POST http://localhost:8080/api/auth/register `
+  -H "Content-Type: application/json" `
+  -d "{\"email\":\"admin@example.com\",\"phone\":\"0800000000\",\"password\":\"password123\",\"role\":\"admin\"}"
+```
+
+Expected: HTTP 403 with `FORBIDDEN_ROLE`. Public registration supports only `owner` and `clinic_staff`.
+
 ## Current status
 
-Sprint 2 adds a PostgreSQL container, a verified GORM connection at startup, and `GET /health/db`. The original `GET /health` endpoint remains available.
+Sprint 3 adds the `users` schema, bcrypt password storage, JWT access tokens, register/login APIs, authentication middleware, role middleware, and protected `GET /api/me`. Both health endpoints remain public and unchanged.
 
-No tables or migrations are created yet. Registration, login, JWT, password hashing, pet CRUD, QR sessions, authorization, clinic visits, timelines, notifications, and audit-log logic are deliberately not implemented.
+Owner profiles, pet CRUD, breeds, QR sessions, clinic access requests, authorization decisions, visits, timelines, notifications, audit logs, refresh tokens, and password recovery are deliberately not implemented.
 
 รายละเอียดสิ่งที่ทำแล้วและข้อมูลส่งต่องานอยู่ที่ [`docs/progress/README.md`](docs/progress/README.md)
 
 ## Recommended next step
 
-Follow `docs/database-plan.md` to design and add versioned PostgreSQL migrations with `golang-migrate`. Keep schema work separate from authentication and feature APIs.
+Continue with Sprint 4: Owner Profile. Keep owner profile tables, repository, service, and routes separate from the completed authentication foundation.

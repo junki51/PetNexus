@@ -1,7 +1,12 @@
 # Database migrations
 
-PetNexus uses PostgreSQL through GORM. Sprint 2 only establishes and verifies the database connection.
+PetNexus uses explicit PostgreSQL migrations and does not use GORM `AutoMigrate`.
 
-No tables, SQL migrations, or GORM AutoMigrate calls belong in this sprint. Versioned migrations will be introduced later with `golang-migrate`.
+Sprint 3 migrations:
 
-Do not create ad-hoc tables before reviewing `docs/database-plan.md`. Migration order and schema must follow that plan.
+1. `001_create_enums.sql` enables `pgcrypto` and creates the `user_role` enum.
+2. `002_create_users.sql` creates the `users` table and its role index.
+
+Apply them in numeric order. PowerShell commands are documented in the project `README.md`.
+
+Do not create ad-hoc tables before reviewing `docs/database-plan.md`. Future migrations must preserve numeric ordering and stay inside the active Sprint scope. A dedicated runner such as `golang-migrate` can be introduced later.

@@ -8,6 +8,7 @@
 | --- | --- | --- |
 | [Sprint 1: Backend Foundation](./sprint-01-backend-foundation.md) | เสร็จแล้ว | Go/Gin scaffold และ `GET /health` |
 | [Sprint 2: Database Foundation](./sprint-02-database-foundation.md) | โค้ดเสร็จแล้ว | Docker Compose, GORM, PostgreSQL connection และ `GET /health/db` |
+| [Sprint 3: Auth Foundation](./sprint-03-auth-foundation.md) | เสร็จและทดสอบแล้ว | Register, login, JWT middleware และ `GET /api/me` |
 
 ## วิธีใช้งาน
 

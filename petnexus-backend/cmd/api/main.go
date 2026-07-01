@@ -7,7 +7,10 @@ import (
 
 	"github.com/phonlakitz/petnexus-backend/internal/config"
 	"github.com/phonlakitz/petnexus-backend/internal/database"
+	"github.com/phonlakitz/petnexus-backend/internal/handlers"
+	"github.com/phonlakitz/petnexus-backend/internal/repositories"
 	"github.com/phonlakitz/petnexus-backend/internal/routes"
+	"github.com/phonlakitz/petnexus-backend/internal/services"
 )
 
 func main() {
@@ -19,8 +22,16 @@ func main() {
 	}
 	log.Println("database connected successfully")
 
+	userRepo := repositories.NewUserRepository(db)
+	authService := services.NewAuthService(userRepo, cfg)
+	authHandler := handlers.NewAuthHandler(authService)
+
 	router := gin.Default()
-	routes.Register(router, db)
+	routes.Register(router, routes.Dependencies{
+		Config:      cfg,
+		DB:          db,
+		AuthHandler: authHandler,
+	})
 
 	log.Printf("PetNexus backend listening on http://localhost:%s", cfg.Port)
 	if err := router.Run(":" + cfg.Port); err != nil {

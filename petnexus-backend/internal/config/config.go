@@ -7,8 +7,8 @@ import (
 	"github.com/joho/godotenv"
 )
 
-// Config contains runtime settings. Database values are used by Sprint 2,
-// while JWT values remain placeholders for a later authentication sprint.
+// Config contains runtime settings for the API, PostgreSQL, and JWT access
+// tokens.
 type Config struct {
 	AppEnv       string
 	Port         string
@@ -36,7 +36,7 @@ func Load() Config {
 		DBPassword:   getEnv("DB_PASSWORD", "postgres"),
 		DBName:       getEnv("DB_NAME", "petnexus"),
 		DBSSLMode:    getEnv("DB_SSLMODE", "disable"),
-		JWTSecret:    getEnv("JWT_SECRET", ""),
+		JWTSecret:    getEnv("JWT_SECRET", "change_me_in_production"),
 		JWTExpiresIn: getEnv("JWT_EXPIRES_IN", "24h"),
 	}
 }
