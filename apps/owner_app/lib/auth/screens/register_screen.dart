@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:owner_app/auth/widgets/custom_input_field.dart';
 import 'package:owner_app/layout/responsive_layout.dart';
 import '../controllers/register_controller.dart';
 
@@ -42,9 +43,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             // --- Header: Back Button & Title ---
             Padding(
               padding: EdgeInsets.symmetric(
-                horizontal: context.nw(16), 
-                vertical: context.nh(8)
-                ),
+                horizontal: context.nw(16),
+                vertical: context.nh(8),
+              ),
               child: Row(
                 children: [
                   CircleAvatar(
@@ -71,12 +72,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Expanded(
               child: Container(
                 width: double.infinity,
-                margin:EdgeInsets.all(context.nh(20)),
+                margin: EdgeInsets.all(context.nh(20)),
                 decoration: BoxDecoration(
                   color: bgBottomColor,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.elliptical(context.nw(250), context.nh(50)),
-                    topRight: Radius.elliptical(context.nw(250), context.nh(50)),
+                    topRight: Radius.elliptical(
+                      context.nw(250),
+                      context.nh(50),
+                    ),
                   ),
                 ),
                 child: SingleChildScrollView(
@@ -106,20 +110,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       SizedBox(height: context.nh(40)),
 
                       // Email Field
-                      _buildTextField(
+                      CustomInputField(
                         controller: _emailController,
-                        hint: 'กรอกอีเมล*',
-                        icon: Icons.email_outlined,
+                        hintText: 'กรอกอีเมล*',
+                        prefixIcon: Icons.email_outlined,
                       ),
                       SizedBox(height: context.nh(20)),
 
                       // Password Field (พร้อมปุ่มเปิด/ปิดตา)
                       ListenableBuilder(
                         listenable: _controller,
-                        builder: (context, _) => _buildTextField(
+                        builder: (context, _) => CustomInputField(
                           controller: _passwordController,
-                          hint: 'อย่างน้อย 8 ตัวอักษร*',
-                          icon: Icons.lock_outline,
+                          hintText: 'อย่างน้อย 8 ตัวอักษร*',
+                          prefixIcon: Icons.lock_outline,
                           isPassword: true,
                           obscureText: !_controller.isPasswordVisible,
                           onToggleVisibility:
@@ -131,10 +135,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       // Confirm Password Field (แยก State ตาชัดเจน)
                       ListenableBuilder(
                         listenable: _controller,
-                        builder: (context, _) => _buildTextField(
+                        builder: (context, _) => CustomInputField(
                           controller: _confirmPasswordController,
-                          hint: 'ยืนยันรหัสผ่าน*',
-                          icon: Icons.lock_clock_outlined,
+                          hintText: 'ยืนยันรหัสผ่าน*',
+                          prefixIcon: Icons.lock_clock_outlined,
                           isPassword: true,
                           obscureText: !_controller.isConfirmPasswordVisible,
                           onToggleVisibility:
@@ -197,30 +201,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               onPressed:
                                   (isLoading || !_controller.isAcceptedTerms)
                                   ? null
-                                  : () => _controller.register(
-                                      _emailController.text,
-                                      _passwordController.text,
-                                      _confirmPasswordController.text,
-                                    ),
+                                  : () {
+                                      final emailInput = _emailController.text.trim();
+                                      final passwordInput =
+                                          _passwordController.text;
+                                      final confirmPasswordInput =
+                                          _confirmPasswordController.text;
+                                      _controller.register(
+                                        emailInput,
+                                        passwordInput,
+                                        confirmPasswordInput,
+                                      );
+                                    },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: primaryTeal,
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(context.nw(28)),
+                                  borderRadius: BorderRadius.circular(
+                                    context.nw(28),
+                                  ),
                                 ),
                                 elevation: 4,
                                 shadowColor: primaryTeal.withValues(alpha: 0.4),
                               ),
                               child: isLoading
-                                  ? const CircularProgressIndicator(color: Colors.white)
+                                  ? const CircularProgressIndicator(
+                                      color: Colors.white,
+                                    )
                                   : Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
                                         Icon(Icons.pets, size: context.nw(24)),
                                         SizedBox(width: context.nw(12)),
                                         Text(
-                                          'สร้างบัญชีใหม่', 
-                                          style: TextStyle(fontSize: context.nf(18), fontWeight: FontWeight.bold),
+                                          'สร้างบัญชีใหม่',
+                                          style: TextStyle(
+                                            fontSize: context.nf(18),
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ],
                                     ),
@@ -234,55 +253,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  // Helper สำหรับสร้าง TextField ที่มีเงาและดีไซน์ตามรูป
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    bool isPassword = false,
-    bool obscureText = false,
-    VoidCallback? onToggleVisibility,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(context.nw(30)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: context.nw(15),
-            offset: Offset(0, context.nh(5)),
-          ),
-        ],
-      ),
-      child: TextField(
-        controller: controller,
-        obscureText: obscureText,
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(color: Colors.black38),
-          prefixIcon: Icon(icon, color: Colors.black54),
-          suffixIcon: isPassword
-              ? IconButton(
-                  icon: Icon(
-                    obscureText
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                    color: Colors.black45,
-                  ),
-                  onPressed: onToggleVisibility,
-                )
-              : null,
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: context.nw(20), 
-            vertical: context.nh(16),
-          ),
         ),
       ),
     );

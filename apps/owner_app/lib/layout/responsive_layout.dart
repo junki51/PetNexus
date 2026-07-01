@@ -5,13 +5,17 @@ extension ResponsiveContext on BuildContext {
   double get screenWidth => MediaQuery.sizeOf(this).width;
   double get screenHeight => MediaQuery.sizeOf(this).height;
 
-  // สมมติว่าขนาดหน้าจอใน Figma ดีไซน์เป็น Base อยู่ที่ 375 x 812 (มาตรฐานโมบายทั่วไป)
-  // ฟังก์ชันนี้จะแปลงค่าความกว้างให้ยืดหยุ่นตามสัดส่วนจอจริง
-  double nw(double width) => (screenWidth / 375) * width;
+  /// [Senior Fix] จำกัดความกว้างสูงสุดที่จะนำไปคำนวณสัดส่วน 
+  /// เพื่อไม่ให้ UI ขยายใหญ่เกินไปเวลาเปิดบน Tablet หรือ Desktop
+  double get _responsiveWidth => screenWidth > 600 ? 450 : screenWidth;
+  double get _responsiveHeight => screenHeight > 900 ? 812 : screenHeight;
 
-  // ฟังก์ชันแปลงค่าความสูงให้ยืดหยุ่นตามสัดส่วนจอจริง
-  double nh(double height) => (screenHeight / 812) * height;
+  // ฟังก์ชันแปลงค่าความกว้าง โดยใช้ตัวแปรที่จำกัดเพดานแล้ว
+  double nw(double width) => (_responsiveWidth / 375) * width;
 
-  // สำหรับฟอนต์ เพื่อให้สเกลตามขนาดจอได้เหมาะสม
-  double nf(double fontSize) => (screenWidth / 375) * fontSize;
+  // ฟังก์ชันแปลงค่าความสูง โดยใช้ตัวแปรที่จำกัดเพดานแล้ว
+  double nh(double height) => (_responsiveHeight / 812) * height;
+
+  // สำหรับฟอนต์ สเกลตามความกว้างที่จำกัดเพดาน ป้องกันฟอนต์ตัวเท่าบ้านบน Desktop
+  double nf(double fontSize) => (_responsiveWidth / 375) * fontSize;
 }
