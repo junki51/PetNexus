@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:owner_app/auth/widgets/custom_input_field.dart';
-import '../controllers/login_controller.dart'; // ตรวจสอบรันพาธไฟล์ให้ถูกต้องนะครับ
-import '../../layout/responsive_layout.dart';
+import 'package:owner_app/features/auth/widgets/custom_input_field.dart';
+import 'package:owner_app/features/auth/controllers/auth_controller.dart';
+import 'package:provider/provider.dart';
+import '../../../layout/responsive_layout.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,7 +12,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final LoginController _controller = LoginController();
 
   // Controllers สำหรับดึงค่าจากช่องกรอก
   final TextEditingController _emailController = TextEditingController();
@@ -26,8 +26,13 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _controller.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
   }
 
   @override
@@ -115,16 +120,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       SizedBox(height: context.nh(20)),
 
                       // Password Field (ผูกเข้ากับคุณสมบัติจริงใน LoginController)
-                      ListenableBuilder(
-                        listenable: _controller,
-                        builder: (context, _) => CustomInputField(
-                          controller: _passwordController,
-                          hintText: 'รหัสผ่าน',
-                          prefixIcon: Icons.lock_outline,
-                          isPassword: true,
-                          obscureText: !_controller.isPasswordVisible,
-                          onToggleVisibility: _controller.togglePasswordVisibility,
-                        ),
+                      Consumer<AuthController>(
+                        builder: (context, controller, _) {
+                          return CustomInputField(
+                            controller: _passwordController,
+                            hintText: 'รหัสผ่าน',
+                            prefixIcon: Icons.lock_outline,
+                            isPassword: true,
+                            obscureText: !controller.isPasswordVisible,
+                            onToggleVisibility: controller.togglePasswordVisibility,
+                          );
+                        },
                       ),
 
                       // Link: ลืมรหัสผ่าน? (จัดชิดขวาตามภาพต้นฉบับ)
@@ -146,56 +152,96 @@ class _LoginScreenState extends State<LoginScreen> {
                       SizedBox(height: context.nh(10)),
 
                       // Login Button (ผูกเข้ากับ AuthState และเมธอดของปุ่ม)
-                      ListenableBuilder(
-                        listenable: _controller,
-                        builder: (context, _) {
-                          // ตรวจสอบสถานะการโหลดจาก Enum AuthState ของคุณเป๊ะๆ
-                          final isLoading = _controller.state == AuthState.loading;
-                          
+                      Consumer<AuthController>(
+                        builder: (context, controller, _) {
+
+                          final isLoading =
+                              controller.state == AuthState.loading;
+
                           return SizedBox(
                             width: double.infinity,
                             height: context.nh(56),
                             child: ElevatedButton(
+
                               onPressed: isLoading
-                                ? null
-                                : () {
-                                    final emailInput = _emailController.text.trim();
-                                    final passwordInput = _passwordController.text;
+                                  ? null
+                                  : () async {
 
-                                    if (emailInput.isEmpty || passwordInput.isEmpty) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('กรุณากรอกอีเมลและรหัสผ่าน')),
+                                    final email =_emailController.text.trim();
+
+                                    final password =_passwordController.text;
+
+                                    if (email.isEmpty ||
+                                      password.isEmpty) {
+
+                                      ScaffoldMessenger.of(context)
+                                        .showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              "กรุณากรอกอีเมลและรหัสผ่าน",
+                                            ),
+                                          ),
+                                        );
+
+                                        return;
+                                      }
+                                      final navigator = Navigator.of(context);
+                                      final messenger = ScaffoldMessenger.of(context);
+
+                                      final success = await controller.login(
+                                        email: email,
+                                        password: password,
                                       );
-                                      return;
-                                    }
 
-                                    _controller.loginWithEmail(
-                                      email: emailInput,
-                                      password: passwordInput,
-                                    );
-                                  },
-                                    
+                                      if (!mounted) return;
+
+                                      if (success) {
+                                        navigator.pushReplacementNamed("/home");
+                                      } else {
+                                        messenger.showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              controller.errorMessage ?? "Login Failed",
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: primaryTeal,
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(context.nw(28)),
+                                  borderRadius:
+                                      BorderRadius.circular(
+                                          context.nw(28)),
                                 ),
-                                elevation: 4,
-                                shadowColor: primaryTeal.withValues(alpha: 0.4),
                               ),
+
                               child: isLoading
-                                  ? const CircularProgressIndicator(color: Colors.white)
+                                  ? const CircularProgressIndicator(
+                                      color: Colors.white,
+                                    )
                                   : Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
                                       children: [
-                                        Icon(Icons.pets, size: context.nw(24)),
-                                        SizedBox(width: context.nw(12)),
+
+                                        Icon(
+                                          Icons.pets,
+                                          size: context.nw(24),
+                                        ),
+
+                                        SizedBox(
+                                          width: context.nw(12),
+                                        ),
+
                                         Text(
-                                          'เข้าสู่ระบบ',
+                                          "เข้าสู่ระบบ",
                                           style: TextStyle(
-                                            fontSize: context.nf(18),
-                                            fontWeight: FontWeight.bold,
+                                            fontSize:
+                                                context.nf(18),
+                                            fontWeight:
+                                                FontWeight.bold,
                                           ),
                                         ),
                                       ],
@@ -223,19 +269,37 @@ class _LoginScreenState extends State<LoginScreen> {
                           _buildSocialButton(
                             icon: Icons.g_mobiledata,
                             color: Colors.red,
-                            onTap: () => _controller.loginWithSocial('Google'),
+                            onTap: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Coming Soon"),
+                                ),
+                              );
+                            },
                           ),
                           SizedBox(width: context.nw(24)),
                           _buildSocialButton(
                             icon: Icons.apple,
                             color: Colors.black,
-                            onTap: () => _controller.loginWithSocial('Apple'),
+                            onTap: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Coming Soon"),
+                                ),
+                              );
+                            },
                           ),
                           SizedBox(width: context.nw(24)),
                           _buildSocialButton(
                             icon: Icons.facebook,
                             color: Colors.blue,
-                            onTap: () => _controller.loginWithSocial('Facebook'),
+                            onTap: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text("Coming Soon"),
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),
