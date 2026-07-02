@@ -4,7 +4,7 @@ PetNexus is a digital pet passport and owner-controlled pet identity platform. T
 
 ## Stack
 
-Sprint 3 uses Go, Gin, godotenv, PostgreSQL, GORM, Docker Compose, bcrypt, and JWT access tokens. Versioned migrations are currently applied with `psql`; golang-migrate can be introduced in a later database-tooling sprint.
+Sprint 4 uses Go, Gin, godotenv, PostgreSQL, GORM, Docker Compose, bcrypt, and JWT access tokens. Safe SQL migrations run automatically at startup; the versioned SQL files can also be applied manually with `psql`.
 
 ## Architecture
 
@@ -18,11 +18,11 @@ handler -> service -> repository -> database
 - `internal/config` loads environment configuration.
 - `internal/routes` registers endpoints.
 - `internal/handlers` receives HTTP requests and sends responses.
-- `internal/services` will contain business and permission rules.
-- `internal/repositories` will contain database access.
-- `internal/models` will contain database entities.
-- `internal/dto` will contain API request and response shapes.
-- `internal/middleware` will contain authentication and role checks.
+- `internal/services` contains business and permission rules.
+- `internal/repositories` contains database access.
+- `internal/models` contains database entities.
+- `internal/dto` contains API request and response shapes.
+- `internal/middleware` contains authentication and role checks.
 - `internal/utils` contains shared helpers.
 - `migrations` will contain versioned PostgreSQL schema changes.
 
@@ -71,11 +71,12 @@ docker compose ps
 
 The container exposes PostgreSQL on `localhost:5432` and stores its data in a named Docker volume.
 
-## Run Sprint 3 migrations
+## Run startup migrations
 
 The backend automatically runs a safe, idempotent SQL startup migration before
 registering routes. It ensures `pgcrypto`, the `user_role` enum, the `users`
-table, and the `idx_users_email_unique` unique index. Startup stops immediately
+table, and the Sprint 4 `owner_profiles` table. Unique indexes enforce one
+account per email and one owner profile per user. Startup stops immediately
 with a clear error if schema migration fails. This supports fresh Render
 PostgreSQL databases and avoids GORM `AutoMigrate` constraint rewrites on
 existing databases.
@@ -94,9 +95,10 @@ If the container is named `petnexus-postgres`, run:
 ```powershell
 Get-Content .\migrations\001_create_enums.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
 Get-Content .\migrations\002_create_users.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
+Get-Content .\migrations\003_create_owner_profiles.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
 ```
 
-If Docker shows a different container name, replace `petnexus-postgres` in both commands. These migrations create only `user_role` and `users`.
+If Docker shows a different container name, replace `petnexus-postgres` in the commands. These migrations create only the implemented auth and owner-profile schema.
 
 ## Run the backend
 
@@ -200,14 +202,177 @@ curl.exe -X POST http://localhost:8080/api/auth/register `
 
 Expected: HTTP 403 with `FORBIDDEN_ROLE`. Public registration supports only `owner` and `clinic_staff`.
 
+## Sprint 4: Owner Profile
+
+An owner profile stores the pet owner's identity and contact details. It is
+separate from `users` so authentication data (email, password hash, and role)
+does not become coupled to editable profile data. The `owner_profiles` table
+has a unique foreign key to `users.id`, giving each account at most one owner
+profile.
+
+All owner-profile endpoints require a valid JWT and the `owner` role:
+
+```text
+POST  /api/owner/profile
+GET   /api/owner/profile
+PATCH /api/owner/profile
+```
+
+The backend always gets `user_id` from the JWT. Clients must not send or choose
+it. `display_name` is computed from `first_name` and `last_name` and is not
+stored in PostgreSQL.
+
+Example create request:
+
+```json
+{
+  "first_name": "Sunny",
+  "last_name": "Example",
+  "gender": "male",
+  "date_of_birth": "2008-01-01",
+  "phone_number": "0812345678",
+  "avatar_url": "https://example.com/avatar.png",
+  "address_line1": "123 Pet Street",
+  "address_line2": "",
+  "province": "Bangkok",
+  "district": "Bang Rak",
+  "subdistrict": "Si Phraya",
+  "postal_code": "10500"
+}
+```
+
+Example response data:
+
+```json
+{
+  "id": "4ec32b2d-16c8-4ac9-99e1-988b08a8cb42",
+  "first_name": "Sunny",
+  "last_name": "Example",
+  "display_name": "Sunny Example",
+  "gender": "male",
+  "date_of_birth": "2008-01-01",
+  "phone_number": "0812345678",
+  "avatar_url": "https://example.com/avatar.png",
+  "address_line1": "123 Pet Street",
+  "address_line2": null,
+  "province": "Bangkok",
+  "district": "Bang Rak",
+  "subdistrict": "Si Phraya",
+  "postal_code": "10500",
+  "created_at": "2026-07-02T08:00:00Z",
+  "updated_at": "2026-07-02T08:00:00Z"
+}
+```
+
+### PowerShell manual test
+
+Start PostgreSQL and the API first, then run these commands in a separate
+PowerShell terminal.
+
+Health checks:
+
+```powershell
+$baseUrl = "http://localhost:8080"
+Invoke-RestMethod -Method Get -Uri "$baseUrl/health"
+Invoke-RestMethod -Method Get -Uri "$baseUrl/health/db"
+```
+
+Register an owner, log in, and save the access token:
+
+```powershell
+$suffix = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+$ownerEmail = "owner.$suffix@example.com"
+$password = "password123"
+
+$registerBody = @{
+  email = $ownerEmail
+  phone = "0812345678"
+  password = $password
+  role = "owner"
+} | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "$baseUrl/api/auth/register" -ContentType "application/json" -Body $registerBody
+
+$loginBody = @{ email = $ownerEmail; password = $password } | ConvertTo-Json
+$login = Invoke-RestMethod -Method Post -Uri "$baseUrl/api/auth/login" -ContentType "application/json" -Body $loginBody
+$token = $login.data.accessToken
+$ownerHeaders = @{ Authorization = "Bearer $token" }
+```
+
+Create, fetch, and patch the profile:
+
+```powershell
+$profileBody = @{
+  first_name = "Sunny"
+  last_name = "Example"
+  gender = "male"
+  date_of_birth = "2008-01-01"
+  phone_number = "0812345678"
+  avatar_url = "https://example.com/avatar.png"
+  address_line1 = "123 Pet Street"
+  address_line2 = ""
+  province = "Bangkok"
+  district = "Bang Rak"
+  subdistrict = "Si Phraya"
+  postal_code = "10500"
+} | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "$baseUrl/api/owner/profile" -Headers $ownerHeaders -ContentType "application/json" -Body $profileBody
+
+Invoke-RestMethod -Method Get -Uri "$baseUrl/api/owner/profile" -Headers $ownerHeaders
+
+$patchBody = @{ first_name = "Sunny Updated"; phone_number = "0899999999" } | ConvertTo-Json
+Invoke-RestMethod -Method Patch -Uri "$baseUrl/api/owner/profile" -Headers $ownerHeaders -ContentType "application/json" -Body $patchBody
+```
+
+Creating the same profile again must return HTTP 409:
+
+```powershell
+try {
+  Invoke-RestMethod -Method Post -Uri "$baseUrl/api/owner/profile" -Headers $ownerHeaders -ContentType "application/json" -Body $profileBody
+} catch {
+  $_.Exception.Response.StatusCode.value__ # Expected: 409
+}
+```
+
+A request without a token must return HTTP 401:
+
+```powershell
+try {
+  Invoke-RestMethod -Method Get -Uri "$baseUrl/api/owner/profile"
+} catch {
+  $_.Exception.Response.StatusCode.value__ # Expected: 401
+}
+```
+
+A `clinic_staff` token must return HTTP 403:
+
+```powershell
+$clinicEmail = "clinic.$suffix@example.com"
+$clinicRegisterBody = @{
+  email = $clinicEmail
+  phone = "0823456789"
+  password = $password
+  role = "clinic_staff"
+} | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "$baseUrl/api/auth/register" -ContentType "application/json" -Body $clinicRegisterBody
+
+$clinicLoginBody = @{ email = $clinicEmail; password = $password } | ConvertTo-Json
+$clinicLogin = Invoke-RestMethod -Method Post -Uri "$baseUrl/api/auth/login" -ContentType "application/json" -Body $clinicLoginBody
+$clinicHeaders = @{ Authorization = "Bearer $($clinicLogin.data.accessToken)" }
+try {
+  Invoke-RestMethod -Method Get -Uri "$baseUrl/api/owner/profile" -Headers $clinicHeaders
+} catch {
+  $_.Exception.Response.StatusCode.value__ # Expected: 403
+}
+```
+
 ## Current status
 
-Sprint 3 adds the `users` schema, bcrypt password storage, JWT access tokens, register/login APIs, authentication middleware, role middleware, and protected `GET /api/me`. Both health endpoints remain public and unchanged.
+Sprint 4 adds the `owner_profiles` schema and owner-only create, get, and partial-update APIs on top of the completed authentication foundation. Existing auth and health endpoints remain unchanged.
 
-Owner profiles, pet CRUD, breeds, QR sessions, clinic access requests, authorization decisions, visits, timelines, notifications, audit logs, refresh tokens, and password recovery are deliberately not implemented.
+Pet CRUD, breeds, pet passports, QR sharing, clinic access requests, authorization decisions, visits, timelines, Flutter UI, and clinic web UI are deliberately not implemented in this sprint.
 
 รายละเอียดสิ่งที่ทำแล้วและข้อมูลส่งต่องานอยู่ที่ [`docs/progress/README.md`](docs/progress/README.md)
 
 ## Recommended next step
 
-Continue with Sprint 4: Owner Profile. Keep owner profile tables, repository, service, and routes separate from the completed authentication foundation.
+Continue with the next agreed database/domain sprint, preferably Pet and Breed foundations, without mixing in QR, clinic authorization, visit, or timeline behavior prematurely.

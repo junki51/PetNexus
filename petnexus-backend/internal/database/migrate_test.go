@@ -55,6 +55,41 @@ func TestMigrationSQLDoesNotDropMissingUserEmailConstraint(t *testing.T) {
 	}
 }
 
+func TestOwnerProfilesTableSQLMatchesCurrentModel(t *testing.T) {
+	for _, fragment := range []string{
+		"id UUID PRIMARY KEY DEFAULT gen_random_uuid()",
+		"user_id UUID NOT NULL",
+		"first_name VARCHAR(100) NOT NULL",
+		"last_name VARCHAR(100) NOT NULL",
+		"gender VARCHAR(30)",
+		"date_of_birth DATE",
+		"phone_number VARCHAR(30) NOT NULL",
+		"avatar_url TEXT",
+		"address_line1 VARCHAR(255)",
+		"address_line2 VARCHAR(255)",
+		"province VARCHAR(100)",
+		"district VARCHAR(100)",
+		"subdistrict VARCHAR(100)",
+		"postal_code VARCHAR(20)",
+		"created_at TIMESTAMPTZ NOT NULL DEFAULT now()",
+		"updated_at TIMESTAMPTZ NOT NULL DEFAULT now()",
+	} {
+		if !strings.Contains(createOwnerProfilesTableSQL, fragment) {
+			t.Fatalf("owner_profiles table SQL does not include %q", fragment)
+		}
+	}
+}
+
+func TestOwnerProfilesConstraintsAreIdempotent(t *testing.T) {
+	if !strings.Contains(createOwnerProfilesUserIDUniqueIndexSQL, "CREATE UNIQUE INDEX IF NOT EXISTS idx_owner_profiles_user_id_unique") {
+		t.Fatal("owner_profiles user_id unique index must be idempotent")
+	}
+	if !strings.Contains(ensureOwnerProfilesUserForeignKeySQL, "IF NOT EXISTS") ||
+		!strings.Contains(ensureOwnerProfilesUserForeignKeySQL, "FOREIGN KEY (user_id) REFERENCES users(id)") {
+		t.Fatal("owner_profiles foreign key must be guarded and reference users(id)")
+	}
+}
+
 func allMigrationSQL() string {
 	var builder strings.Builder
 	for _, step := range migrationSteps {

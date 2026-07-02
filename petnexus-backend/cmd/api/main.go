@@ -28,14 +28,18 @@ func main() {
 	log.Println("database migration completed successfully")
 
 	userRepo := repositories.NewUserRepository(db)
+	ownerProfileRepo := repositories.NewOwnerProfileRepository(db)
 	authService := services.NewAuthService(userRepo, cfg)
+	ownerProfileService := services.NewOwnerProfileService(ownerProfileRepo)
 	authHandler := handlers.NewAuthHandler(authService)
+	ownerProfileHandler := handlers.NewOwnerProfileHandler(ownerProfileService)
 
 	router := gin.Default()
 	routes.Register(router, routes.Dependencies{
-		Config:      cfg,
-		DB:          db,
-		AuthHandler: authHandler,
+		Config:       cfg,
+		DB:           db,
+		AuthHandler:  authHandler,
+		OwnerHandler: ownerProfileHandler,
 	})
 
 	log.Printf("PetNexus backend listening on http://localhost:%s", cfg.Port)

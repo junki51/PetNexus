@@ -10,6 +10,8 @@
 | [Sprint 2: Database Foundation](./sprint-02-database-foundation.md) | โค้ดเสร็จแล้ว | Docker Compose, GORM, PostgreSQL connection และ `GET /health/db` |
 | [Sprint 3: Auth Foundation](./sprint-03-auth-foundation.md) | เสร็จและทดสอบแล้ว | Register, login, JWT middleware และ `GET /api/me` |
 
+| [Sprint 4: Owner Profile](./sprint-04-owner-profile.md) | Complete and tested | Owner-only create, get, and patch profile APIs |
+
 ## Deployment updates
 
 - [Render: DATABASE_URL support](./render-database-url.md)

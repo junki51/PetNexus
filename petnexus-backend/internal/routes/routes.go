@@ -8,14 +8,16 @@ import (
 	"github.com/phonlakitz/petnexus-backend/internal/config"
 	"github.com/phonlakitz/petnexus-backend/internal/handlers"
 	"github.com/phonlakitz/petnexus-backend/internal/middleware"
+	"github.com/phonlakitz/petnexus-backend/internal/models"
 )
 
 // Dependencies contains the concrete application dependencies needed by the
 // route layer.
 type Dependencies struct {
-	Config      config.Config
-	DB          *gorm.DB
-	AuthHandler *handlers.AuthHandler
+	Config       config.Config
+	DB           *gorm.DB
+	AuthHandler  *handlers.AuthHandler
+	OwnerHandler *handlers.OwnerProfileHandler
 }
 
 // Register attaches all currently available routes to the router.
@@ -33,8 +35,16 @@ func Register(router *gin.Engine, deps Dependencies) {
 		deps.AuthHandler.Me,
 	)
 
+	owner := api.Group(
+		"/owner",
+		middleware.AuthMiddleware(deps.Config.JWTSecret),
+		middleware.RequireRole(models.RoleOwner),
+	)
+	owner.POST("/profile", deps.OwnerHandler.CreateProfile)
+	owner.GET("/profile", deps.OwnerHandler.GetProfile)
+	owner.PATCH("/profile", deps.OwnerHandler.UpdateProfile)
+
 	// TODO: Register future route groups for:
-	// /api/owner
 	// /api/pets
 	// /api/breeds
 	// /api/clinic

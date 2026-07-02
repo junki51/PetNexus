@@ -101,6 +101,46 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_unique ON users(email);`
 const createUsersRoleIndexSQL = `
 CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);`
 
+const createOwnerProfilesTableSQL = `
+CREATE TABLE IF NOT EXISTS owner_profiles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    first_name VARCHAR(100) NOT NULL,
+    last_name VARCHAR(100) NOT NULL,
+    gender VARCHAR(30),
+    date_of_birth DATE,
+    phone_number VARCHAR(30) NOT NULL,
+    avatar_url TEXT,
+    address_line1 VARCHAR(255),
+    address_line2 VARCHAR(255),
+    province VARCHAR(100),
+    district VARCHAR(100),
+    subdistrict VARCHAR(100),
+    postal_code VARCHAR(20),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);`
+
+const createOwnerProfilesUserIDUniqueIndexSQL = `
+CREATE UNIQUE INDEX IF NOT EXISTS idx_owner_profiles_user_id_unique
+ON owner_profiles(user_id);`
+
+const ensureOwnerProfilesUserForeignKeySQL = `
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conname = 'fk_owner_profiles_user'
+          AND conrelid = 'owner_profiles'::regclass
+    ) THEN
+        ALTER TABLE owner_profiles
+        ADD CONSTRAINT fk_owner_profiles_user
+        FOREIGN KEY (user_id) REFERENCES users(id);
+    END IF;
+END
+$$;`
+
 type migrationStep struct {
 	name string
 	sql  string
@@ -113,11 +153,14 @@ var migrationSteps = []migrationStep{
 	{name: "ensure users table", sql: createUsersTableSQL},
 	{name: "ensure users email unique index", sql: createUsersEmailUniqueIndexSQL},
 	{name: "ensure users role index", sql: createUsersRoleIndexSQL},
+	{name: "ensure owner_profiles table", sql: createOwnerProfilesTableSQL},
+	{name: "ensure owner_profiles user unique index", sql: createOwnerProfilesUserIDUniqueIndexSQL},
+	{name: "ensure owner_profiles user foreign key", sql: ensureOwnerProfilesUserForeignKeySQL},
 }
 
 // RunMigrations creates only the schema required by features that are currently
-// implemented. It intentionally avoids GORM AutoMigrate for users because
-// AutoMigrate may try to alter or drop constraints on an existing database.
+// implemented. It intentionally avoids GORM AutoMigrate because AutoMigrate
+// may try to alter or drop constraints on an existing database.
 func RunMigrations(db *gorm.DB) error {
 	for _, step := range migrationSteps {
 		if err := db.Exec(step.sql).Error; err != nil {
