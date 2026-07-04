@@ -90,6 +90,62 @@ func TestOwnerProfilesConstraintsAreIdempotent(t *testing.T) {
 	}
 }
 
+func TestBreedsMigrationIsSafeAndSeedsExpectedBreeds(t *testing.T) {
+	for _, fragment := range []string{
+		"CREATE TABLE IF NOT EXISTS breeds",
+		"species VARCHAR(20) NOT NULL",
+		"name VARCHAR(100) NOT NULL",
+		"name_th VARCHAR(100)",
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_breeds_species_name_unique",
+		"CREATE INDEX IF NOT EXISTS idx_breeds_species",
+		"CHECK (species IN ('dog', 'cat'))",
+		"ON CONFLICT (species, name) DO NOTHING",
+	} {
+		if !strings.Contains(allMigrationSQL(), fragment) {
+			t.Fatalf("breed migration SQL does not include %q", fragment)
+		}
+	}
+	if strings.Count(seedBreedsSQL, "('dog',") != 8 || strings.Count(seedBreedsSQL, "('cat',") != 8 {
+		t.Fatal("breed seed must include exactly 8 dog and 8 cat breeds")
+	}
+}
+
+func TestPetsMigrationMatchesModelAndUsesGuardedConstraints(t *testing.T) {
+	for _, fragment := range []string{
+		"CREATE TABLE IF NOT EXISTS pets",
+		"owner_profile_id UUID NOT NULL",
+		"breed_id UUID",
+		"species VARCHAR(20) NOT NULL",
+		"name VARCHAR(100) NOT NULL",
+		"gender VARCHAR(30)",
+		"date_of_birth DATE",
+		"weight_kg NUMERIC(6,2)",
+		"microchip_id VARCHAR(100)",
+		"avatar_url TEXT",
+		"color VARCHAR(100)",
+		"distinctive_marks TEXT",
+		"is_neutered BOOLEAN",
+	} {
+		if !strings.Contains(createPetsTableSQL, fragment) {
+			t.Fatalf("pets table SQL does not include %q", fragment)
+		}
+	}
+	migrationSQL := allMigrationSQL()
+	for _, fragment := range []string{
+		"CREATE INDEX IF NOT EXISTS idx_pets_owner_profile_id",
+		"CREATE INDEX IF NOT EXISTS idx_pets_breed_id",
+		"CREATE INDEX IF NOT EXISTS idx_pets_species",
+		"FOREIGN KEY (owner_profile_id) REFERENCES owner_profiles(id)",
+		"FOREIGN KEY (breed_id) REFERENCES breeds(id)",
+		"CHECK (species IN ('dog', 'cat'))",
+		"gender IN ('male', 'female', 'unknown')",
+	} {
+		if !strings.Contains(migrationSQL, fragment) {
+			t.Fatalf("pet migration SQL does not include %q", fragment)
+		}
+	}
+}
+
 func allMigrationSQL() string {
 	var builder strings.Builder
 	for _, step := range migrationSteps {

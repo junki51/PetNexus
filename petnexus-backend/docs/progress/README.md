@@ -9,8 +9,8 @@
 | [Sprint 1: Backend Foundation](./sprint-01-backend-foundation.md) | เสร็จแล้ว | Go/Gin scaffold และ `GET /health` |
 | [Sprint 2: Database Foundation](./sprint-02-database-foundation.md) | โค้ดเสร็จแล้ว | Docker Compose, GORM, PostgreSQL connection และ `GET /health/db` |
 | [Sprint 3: Auth Foundation](./sprint-03-auth-foundation.md) | เสร็จและทดสอบแล้ว | Register, login, JWT middleware และ `GET /api/me` |
-
-| [Sprint 4: Owner Profile](./sprint-04-owner-profile.md) | Complete and tested | Owner-only create, get, and patch profile APIs |
+| [Sprint 4: Owner Profile](./sprint-04-owner-profile.md) | เสร็จและทดสอบแล้ว | Owner-only create, get และ patch profile APIs |
+| [Sprint 5: Breed + Pet Creation](./sprint-05-breed-pet-creation.md) | เสร็จและทดสอบในเครื่องแล้ว | Breed catalog และ owner-only pet basic profile APIs |
 
 ## Deployment updates
 

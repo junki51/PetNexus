@@ -11,6 +11,8 @@ Startup migration behavior:
 - creates `idx_users_email_unique` with `CREATE UNIQUE INDEX IF NOT EXISTS`
 - creates the `owner_profiles` table with a guarded foreign key to `users(id)`
 - creates the unique `owner_profiles.user_id` index idempotently
+- creates `breeds` and `pets` with guarded checks, indexes, and foreign keys
+- seeds 8 dog and 8 cat breeds with `ON CONFLICT DO NOTHING`
 - avoids GORM `AutoMigrate` so startup will not try to drop or
   rewrite missing constraints on an existing database
 - stops application startup if migration fails
@@ -22,6 +24,8 @@ Current migrations:
    and its role index.
 3. `003_create_owner_profiles.sql` creates the Sprint 4 owner profile table,
    its unique user index, and its guarded user foreign key.
+4. `004_create_breeds_and_pets.sql` creates the Sprint 5 breed catalog and pet
+   tables, adds guarded integrity constraints, and seeds the initial breeds.
 
 The SQL files can still be applied manually in numeric order. PowerShell commands are documented in the project `README.md`.
 

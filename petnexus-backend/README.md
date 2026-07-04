@@ -4,7 +4,7 @@ PetNexus is a digital pet passport and owner-controlled pet identity platform. T
 
 ## Stack
 
-Sprint 4 uses Go, Gin, godotenv, PostgreSQL, GORM, Docker Compose, bcrypt, and JWT access tokens. Safe SQL migrations run automatically at startup; the versioned SQL files can also be applied manually with `psql`.
+Sprint 5 uses Go, Gin, godotenv, PostgreSQL, GORM, Docker Compose, bcrypt, and JWT access tokens. Safe SQL migrations run automatically at startup; the versioned SQL files can also be applied manually with `psql`.
 
 ## Architecture
 
@@ -75,8 +75,9 @@ The container exposes PostgreSQL on `localhost:5432` and stores its data in a na
 
 The backend automatically runs a safe, idempotent SQL startup migration before
 registering routes. It ensures `pgcrypto`, the `user_role` enum, the `users`
-table, and the Sprint 4 `owner_profiles` table. Unique indexes enforce one
-account per email and one owner profile per user. Startup stops immediately
+table, `owner_profiles`, `breeds`, and `pets`. Unique indexes enforce one
+account per email, one owner profile per user, and unique breed names per
+species. Startup stops immediately
 with a clear error if schema migration fails. This supports fresh Render
 PostgreSQL databases and avoids GORM `AutoMigrate` constraint rewrites on
 existing databases.
@@ -96,9 +97,12 @@ If the container is named `petnexus-postgres`, run:
 Get-Content .\migrations\001_create_enums.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
 Get-Content .\migrations\002_create_users.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
 Get-Content .\migrations\003_create_owner_profiles.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
+Get-Content .\migrations\004_create_breeds_and_pets.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
 ```
 
-If Docker shows a different container name, replace `petnexus-postgres` in the commands. These migrations create only the implemented auth and owner-profile schema.
+If Docker shows a different container name, replace `petnexus-postgres` in the
+commands. These migrations create the currently implemented auth, owner
+profile, breed catalog, and basic pet profile schema only.
 
 ## Run the backend
 
@@ -365,14 +369,182 @@ try {
 }
 ```
 
+## Sprint 5: Breed + Pet Creation Backend
+
+Sprint 5 adds the breed reference catalog and owner-controlled basic pet
+profiles. It supports this relationship without adding passport or clinic
+behavior:
+
+```text
+users 1:1 owner_profiles
+owner_profiles 1:N pets
+breeds 1:N pets
+```
+
+New tables are `breeds` and `pets`. The startup migration safely seeds 8 dog
+and 8 cat breeds with `ON CONFLICT DO NOTHING`. `breed_id` is optional, but a
+provided breed must exist and match the pet species.
+
+Endpoints:
+
+```text
+GET   /api/breeds
+GET   /api/breeds?species=dog
+GET   /api/breeds?species=cat
+POST  /api/pets
+GET   /api/pets
+GET   /api/pets/:id
+PATCH /api/pets/:id
+```
+
+Breed listing is public. Every pet endpoint requires JWT authentication, role
+`owner`, and an existing owner profile. Ownership is always resolved from the
+JWT; request DTOs do not accept `user_id` or `owner_profile_id`. Accessing
+another owner's pet returns 404.
+
+Example create request:
+
+```json
+{
+  "species": "dog",
+  "name": "Milo",
+  "breed_id": "optional-breed-uuid",
+  "gender": "male",
+  "date_of_birth": "2022-05-10",
+  "weight_kg": 12.5,
+  "microchip_id": "MC-123456789",
+  "avatar_url": "https://example.com/milo.png",
+  "color": "Brown",
+  "distinctive_marks": "White spot on chest",
+  "is_neutered": true
+}
+```
+
+The response contains basic pet data, computed `age_years`, and a safe breed
+object. It does not contain owner or user IDs.
+
+### Sprint 5 PowerShell test
+
+Start Docker and `go run ./cmd/api`, then run:
+
+```powershell
+$baseUrl = "http://localhost:8080"
+Invoke-RestMethod "$baseUrl/health"
+Invoke-RestMethod "$baseUrl/health/db"
+
+$suffix = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+$email = "sprint5.owner.$suffix@example.com"
+$password = "password123"
+$register = @{ email=$email; phone="0812345678"; password=$password; role="owner" } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "$baseUrl/api/auth/register" -ContentType "application/json" -Body $register
+$login = Invoke-RestMethod -Method Post -Uri "$baseUrl/api/auth/login" -ContentType "application/json" `
+  -Body (@{ email=$email; password=$password } | ConvertTo-Json)
+$headers = @{ Authorization = "Bearer $($login.data.accessToken)" }
+
+$profile = @{ first_name="Sunny"; last_name="Example"; phone_number="0812345678" } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "$baseUrl/api/owner/profile" -Headers $headers -ContentType "application/json" -Body $profile
+
+$breeds = Invoke-RestMethod "$baseUrl/api/breeds"
+$dogs = Invoke-RestMethod "$baseUrl/api/breeds?species=dog"
+$cats = Invoke-RestMethod "$baseUrl/api/breeds?species=cat"
+$breedId = ($dogs.data | Where-Object name -eq "Poodle" | Select-Object -First 1).id
+
+$petBody = @{
+  species="dog"; name="Milo"; breed_id=$breedId; gender="male"
+  date_of_birth="2022-05-10"; weight_kg=12.5; microchip_id="MC-123456789"
+  avatar_url="https://example.com/milo.png"; color="Brown"
+  distinctive_marks="White spot on chest"; is_neutered=$true
+} | ConvertTo-Json
+$pet = Invoke-RestMethod -Method Post -Uri "$baseUrl/api/pets" -Headers $headers -ContentType "application/json" -Body $petBody
+
+Invoke-RestMethod -Method Get -Uri "$baseUrl/api/pets" -Headers $headers
+Invoke-RestMethod -Method Get -Uri "$baseUrl/api/pets/$($pet.data.id)" -Headers $headers
+$patch = @{ name="Milo Updated"; weight_kg=13.2 } | ConvertTo-Json
+Invoke-RestMethod -Method Patch -Uri "$baseUrl/api/pets/$($pet.data.id)" -Headers $headers -ContentType "application/json" -Body $patch
+```
+
+Negative checks:
+
+```powershell
+# No token: expect 401
+try { Invoke-RestMethod "$baseUrl/api/pets" } catch { $_.Exception.Response.StatusCode.value__ }
+
+# Invalid species: expect 400
+$invalid = @{ species="bird"; name="Invalid" } | ConvertTo-Json
+try { Invoke-RestMethod -Method Post -Uri "$baseUrl/api/pets" -Headers $headers -ContentType "application/json" -Body $invalid } catch { $_.Exception.Response.StatusCode.value__ }
+
+# Dog with a cat breed: expect 400
+$catBreedId = ($cats.data | Select-Object -First 1).id
+$mismatch = @{ species="dog"; name="Mismatch"; breed_id=$catBreedId } | ConvertTo-Json
+try { Invoke-RestMethod -Method Post -Uri "$baseUrl/api/pets" -Headers $headers -ContentType "application/json" -Body $mismatch } catch { $_.Exception.Response.StatusCode.value__ }
+
+# Empty PATCH: expect 400
+try { Invoke-RestMethod -Method Patch -Uri "$baseUrl/api/pets/$($pet.data.id)" -Headers $headers -ContentType "application/json" -Body '{}' } catch { $_.Exception.Response.StatusCode.value__ }
+
+# Invalid pet UUID: expect 400
+try { Invoke-RestMethod -Method Get -Uri "$baseUrl/api/pets/not-a-uuid" -Headers $headers } catch { $_.Exception.Response.StatusCode.value__ }
+```
+
+Clinic staff must receive 403:
+
+```powershell
+$clinicEmail = "sprint5.clinic.$suffix@example.com"
+$clinicRegister = @{
+  email=$clinicEmail; phone="0823456789"; password=$password; role="clinic_staff"
+} | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "$baseUrl/api/auth/register" -ContentType "application/json" -Body $clinicRegister
+$clinicLogin = Invoke-RestMethod -Method Post -Uri "$baseUrl/api/auth/login" -ContentType "application/json" `
+  -Body (@{ email=$clinicEmail; password=$password } | ConvertTo-Json)
+$clinicHeaders = @{ Authorization = "Bearer $($clinicLogin.data.accessToken)" }
+try {
+  Invoke-RestMethod -Method Get -Uri "$baseUrl/api/pets" -Headers $clinicHeaders
+} catch {
+  $_.Exception.Response.StatusCode.value__ # Expected: 403
+}
+```
+
+A second owner must create an owner profile before creating pets, and must not
+be able to read the first owner's pet:
+
+```powershell
+$otherEmail = "sprint5.other-owner.$suffix@example.com"
+$otherRegister = @{
+  email=$otherEmail; phone="0834567890"; password=$password; role="owner"
+} | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "$baseUrl/api/auth/register" -ContentType "application/json" -Body $otherRegister
+$otherLogin = Invoke-RestMethod -Method Post -Uri "$baseUrl/api/auth/login" -ContentType "application/json" `
+  -Body (@{ email=$otherEmail; password=$password } | ConvertTo-Json)
+$otherHeaders = @{ Authorization = "Bearer $($otherLogin.data.accessToken)" }
+
+# Owner without owner profile: expect 404
+$minimalPet = @{ species="dog"; name="No Profile Yet" } | ConvertTo-Json
+try {
+  Invoke-RestMethod -Method Post -Uri "$baseUrl/api/pets" -Headers $otherHeaders -ContentType "application/json" -Body $minimalPet
+} catch {
+  $_.Exception.Response.StatusCode.value__ # Expected: 404
+}
+
+$otherProfile = @{
+  first_name="Second"; last_name="Owner"; phone_number="0834567890"
+} | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "$baseUrl/api/owner/profile" -Headers $otherHeaders -ContentType "application/json" -Body $otherProfile
+
+# Another owner's pet is hidden: expect 404
+try {
+  Invoke-RestMethod -Method Get -Uri "$baseUrl/api/pets/$($pet.data.id)" -Headers $otherHeaders
+} catch {
+  $_.Exception.Response.StatusCode.value__ # Expected: 404
+}
+```
+
 ## Current status
 
-Sprint 4 adds the `owner_profiles` schema and owner-only create, get, and partial-update APIs on top of the completed authentication foundation. Existing auth and health endpoints remain unchanged.
+Sprint 5 adds the `breeds` and `pets` schema, idempotent breed seed data, public breed listing, and owner-only pet create/list/detail/patch APIs. Sprint 1-4 health, auth, and owner profile endpoints remain unchanged.
 
-Pet CRUD, breeds, pet passports, QR sharing, clinic access requests, authorization decisions, visits, timelines, Flutter UI, and clinic web UI are deliberately not implemented in this sprint.
+Pet Passport, QR sharing, clinic access requests, authorization decisions, visits, timelines, notifications, real file uploads, Flutter UI, and clinic web UI are deliberately not implemented in this sprint.
 
 รายละเอียดสิ่งที่ทำแล้วและข้อมูลส่งต่องานอยู่ที่ [`docs/progress/README.md`](docs/progress/README.md)
 
 ## Recommended next step
 
-Continue with the next agreed database/domain sprint, preferably Pet and Breed foundations, without mixing in QR, clinic authorization, visit, or timeline behavior prematurely.
+Deploy/redeploy to Render and repeat the Sprint 5 smoke flow. Plan Pet Passport or QR sharing only as a separate, explicitly scoped sprint.

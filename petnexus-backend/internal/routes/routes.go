@@ -18,6 +18,8 @@ type Dependencies struct {
 	DB           *gorm.DB
 	AuthHandler  *handlers.AuthHandler
 	OwnerHandler *handlers.OwnerProfileHandler
+	BreedHandler *handlers.BreedHandler
+	PetHandler   *handlers.PetHandler
 }
 
 // Register attaches all currently available routes to the router.
@@ -44,9 +46,19 @@ func Register(router *gin.Engine, deps Dependencies) {
 	owner.GET("/profile", deps.OwnerHandler.GetProfile)
 	owner.PATCH("/profile", deps.OwnerHandler.UpdateProfile)
 
+	api.GET("/breeds", deps.BreedHandler.ListBreeds)
+
+	pets := api.Group(
+		"/pets",
+		middleware.AuthMiddleware(deps.Config.JWTSecret),
+		middleware.RequireRole(models.RoleOwner),
+	)
+	pets.POST("", deps.PetHandler.CreatePet)
+	pets.GET("", deps.PetHandler.ListMyPets)
+	pets.GET("/:id", deps.PetHandler.GetMyPet)
+	pets.PATCH("/:id", deps.PetHandler.UpdateMyPet)
+
 	// TODO: Register future route groups for:
-	// /api/pets
-	// /api/breeds
 	// /api/clinic
 	// /api/authorizations
 	// /api/notifications
