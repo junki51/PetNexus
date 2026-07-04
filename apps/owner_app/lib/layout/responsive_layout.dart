@@ -18,4 +18,14 @@ extension ResponsiveContext on BuildContext {
 
   // สำหรับฟอนต์ สเกลตามความกว้างที่จำกัดเพดาน ป้องกันฟอนต์ตัวเท่าบ้านบน Desktop
   double nf(double fontSize) => (_responsiveWidth / 375) * fontSize;
+
+  double radius(double value) => nw(value);
+
+  double icon(double value) => nw(value);
+
+  EdgeInsets padding(double value) {
+    return EdgeInsets.all(
+      nw(value),
+    );
+  }
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../../layout/responsive_layout.dart'; // นำเข้า Extension ของคุณ
-// import 'path_to_your_extension/responsive_context.dart'; // import extension ของคุณที่นี่
+
+import '../../../layout/responsive_layout.dart';
 
 class CustomInputField extends StatelessWidget {
   final TextEditingController controller;
@@ -10,6 +10,7 @@ class CustomInputField extends StatelessWidget {
   final bool obscureText;
   final VoidCallback? onToggleVisibility;
   final TextInputType? keyboardType;
+  final TextInputAction? textInputAction;
 
   const CustomInputField({
     super.key,
@@ -20,19 +21,23 @@ class CustomInputField extends StatelessWidget {
     this.obscureText = false,
     this.onToggleVisibility,
     this.keyboardType,
+    this.textInputAction,
   });
 
   @override
   Widget build(BuildContext context) {
+    final height = context.nh(48).clamp(44.0, 52.0).toDouble();
+
     return Container(
+      height: height,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(context.nw(30)),
+        borderRadius: BorderRadius.circular(height / 2),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: context.nw(15),
-            offset: Offset(0, context.nh(5)),
+            color: Colors.black.withValues(alpha: 0.16),
+            blurRadius: context.nw(8),
+            offset: Offset(0, context.nh(3)),
           ),
         ],
       ),
@@ -40,26 +45,46 @@ class CustomInputField extends StatelessWidget {
         controller: controller,
         obscureText: obscureText,
         keyboardType: keyboardType,
+        textInputAction: textInputAction,
+        textAlignVertical: TextAlignVertical.center,
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: const TextStyle(color: Colors.black38),
-          prefixIcon: Icon(prefixIcon, color: Colors.black54),
+          hintStyle: TextStyle(
+            color: Colors.black45,
+            fontSize: context.nf(20),
+          ),
+          prefixIcon: Icon(
+            prefixIcon,
+            color: Colors.black54,
+            size: context.icon(30),
+          ),
+          prefixIconConstraints: BoxConstraints(
+            minWidth: context.nw(46),
+            minHeight: height,
+          ),
           suffixIcon: isPassword
               ? IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints(
+                    minWidth: context.nw(44),
+                    minHeight: height,
+                  ),
                   icon: Icon(
                     obscureText
                         ? Icons.visibility_off_outlined
                         : Icons.visibility_outlined,
                     color: Colors.black45,
+                    size: context.icon(30),
                   ),
                   onPressed: onToggleVisibility,
                 )
               : null,
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(
-            horizontal: context.nw(20), 
-            vertical: context.nh(16),
+          suffixIconConstraints: BoxConstraints(
+            minWidth: context.nw(44),
+            minHeight: height,
           ),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.zero,
         ),
       ),
     );

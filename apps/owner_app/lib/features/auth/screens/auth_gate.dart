@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../app/app_routes.dart';
 import '../controllers/auth_controller.dart';
-import '../screens/home_screen.dart';
-import 'login_screen.dart';
 
 class AuthGate extends StatefulWidget {
   const AuthGate({super.key});
@@ -13,39 +12,26 @@ class AuthGate extends StatefulWidget {
 }
 
 class _AuthGateState extends State<AuthGate> {
-
   @override
   void initState() {
     super.initState();
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final authController = context.read<AuthController>();
 
-      final authController =
-          context.read<AuthController>();
-
-      final isLogin =
-          await authController.checkAuthentication();
+      final isLogin = await authController.checkAuthentication();
 
       if (!mounted) return;
 
-      Navigator.pushReplacement(
+      Navigator.pushReplacementNamed(
         context,
-        MaterialPageRoute(
-          builder: (_) =>
-               isLogin
-                  ? const HomeScreen()
-                  : const LoginScreen(),
-        ),
+        isLogin ? AppRoutes.home : AppRoutes.first,
       );
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }
