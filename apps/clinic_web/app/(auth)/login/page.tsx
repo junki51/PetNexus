@@ -28,7 +28,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="w-full max-w-4xl bg-white border border-navy-200 rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[560px] animate-[fade-in_0.3s_ease-out]">
+    <div className="w-full max-w-4xl bg-white border border-navy-200 rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-140 animate-[fade-in_0.3s_ease-out]">
       {/* Left Panel — Branding & Photo Mock (Teal & Navy Background) */}
       <div className="w-full md:w-1/2 bg-navy-50/50 p-8 md:p-12 flex flex-col justify-between border-b md:border-b-0 md:border-r border-navy-200">
         <div className="flex items-center gap-3">

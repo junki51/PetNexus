@@ -200,7 +200,7 @@ export default function QrCheckInPage() {
         {/* Right Column — Loaded Pet Info (lg:col-span-5) */}
         <div className="lg:col-span-5">
           {scannedPet ? (
-            <Card className="animate-[slide-up_0.25s_ease-out] bg-white">
+            <Card className="animate-slide-up bg-white">
               <CardHeader>
                 <CardTitle subtitle={t("profile_retrieved")}>
                   {t("checkin_profile")}

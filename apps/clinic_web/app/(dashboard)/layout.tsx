@@ -18,7 +18,7 @@ export default function DashboardLayout({
         <Topbar />
 
         {/* Content Body (Scrollable) */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 animate-[fade-in_0.2s_ease-out]">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 animate-fade-in">
           {children}
         </main>
       </div>
