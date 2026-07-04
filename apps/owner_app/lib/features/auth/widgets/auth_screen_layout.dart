@@ -139,24 +139,26 @@ class _AuthHeroHeader extends StatelessWidget {
                 label: title,
                 button: true,
                 child: CircleAvatar(
-                  radius: context.nw(18),
+                  radius: context.nw(25),
                   backgroundColor: AppColors.primary,
                   child: IconButton(
                     padding: EdgeInsets.zero,
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.chevron_left,
                       color: AppColors.background,
+                      size: context.icon(30),
                     ),
                     onPressed: onBack ?? () => Navigator.maybePop(context),
                   ),
                 ),
               ),
-              SizedBox(width: context.nw(12)),
+              SizedBox(width: context.nw(16)),
               Text(
                 title,
                 style: AppTextStyles.caption(context).copyWith(
                   color: AppColors.textPrimary,
-                  fontSize: context.nf(14),
+                  fontWeight: FontWeight.w600,
+                  fontSize: context.nf(20),
                 ),
               ),
             ],
@@ -254,7 +256,7 @@ class AuthPrimaryButton extends StatelessWidget {
               )
             : Row(
                 children: [
-                  Icon(Icons.pets, size: context.icon(30)),
+                  Icon(Icons.pets, size: context.icon(50)),
                   SizedBox(width: context.nw(8)),
                   Expanded(
                     child: Text(
@@ -262,11 +264,11 @@ class AuthPrimaryButton extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: AppTextStyles.button(context).copyWith(
                         color: AppColors.background,
-                        fontSize: context.nf(15),
+                        fontSize: context.nf(35),
                       ),
                     ),
                   ),
-                  SizedBox(width: context.icon(30) + context.nw(8)),
+                  SizedBox(width: context.icon(50) + context.nw(8)),
                 ],
               ),
       ),
