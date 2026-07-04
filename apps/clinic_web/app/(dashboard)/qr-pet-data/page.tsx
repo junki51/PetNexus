@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { QrCode, Keyboard, Camera, AlertCircle } from "lucide-react";
+import { QrCode, Keyboard, Camera, AlertCircle, Phone, Search } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardBody } from "@/app/components/ui/Card";
 import { Tabs, TabList, Tab, TabPanel } from "@/app/components/ui/Tabs";
 import { Input } from "@/app/components/ui/Input";
@@ -10,9 +10,12 @@ import { StatusBadge } from "@/app/components/ui/Badge";
 import { Avatar } from "@/app/components/ui/Avatar";
 import { MOCK_QR_PET } from "@/app/lib/mock-data";
 import Link from "next/link";
+import { useLanguage } from "@/app/components/LanguageContext";
 
 export default function QrCheckInPage() {
+  const { t } = useLanguage();
   const [code, setCode] = useState("");
+  const [phoneOrName, setPhoneOrName] = useState("");
   const [scannedPet, setScannedPet] = useState<typeof MOCK_QR_PET | null>(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [scanning, setScanning] = useState(false);
@@ -25,6 +28,24 @@ export default function QrCheckInPage() {
       setError("");
     } else {
       setError("Invalid QR Code or Pet ID. Please try again.");
+      setScannedPet(null);
+    }
+  };
+
+  const handleSearchOwner = (e: React.FormEvent) => {
+    e.preventDefault();
+    const query = phoneOrName.trim();
+    // Match phone mock: "081-234-5678" or owner mock: "Sarah Johnson" or "Sarah"
+    if (
+      query === "081-234-5678" || 
+      query === "0812345678" ||
+      query.toLowerCase().includes("sarah") ||
+      query.toLowerCase().includes("johnson")
+    ) {
+      setScannedPet(MOCK_QR_PET);
+      setError("");
+    } else {
+      setError("No owner profile matches this name or phone number.");
       setScannedPet(null);
     }
   };
@@ -45,9 +66,9 @@ export default function QrCheckInPage() {
   return (
     <div className="flex flex-col gap-6 max-w-7xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-navy-900">QR Pet Check-in</h1>
+        <h1 className="text-2xl font-bold text-navy-900">{t("qr_title")}</h1>
         <p className="text-sm text-navy-500 mt-1">
-          Scan the pet&apos;s QR code or enter the code below to retrieve pet information.
+          {t("qr_desc")}
         </p>
       </div>
 
@@ -56,15 +77,19 @@ export default function QrCheckInPage() {
         <div className="lg:col-span-7">
           <Card className="p-0">
             <Tabs defaultTab="scan">
-              <div className="border-b border-navy-200 px-6 pt-4">
-                <TabList className="w-full max-w-sm mb-4">
+              <div className="border-b border-navy-200 px-6 pt-4 bg-white">
+                <TabList className="w-full flex-wrap mb-4 gap-1 sm:gap-2">
                   <Tab value="scan" className="flex items-center justify-center gap-2">
                     <QrCode size={16} />
-                    Scan QR Code
+                    {t("tab_scan_qr")}
                   </Tab>
                   <Tab value="manual" className="flex items-center justify-center gap-2">
                     <Keyboard size={16} />
-                    Enter Code
+                    {t("tab_enter_code")}
+                  </Tab>
+                  <Tab value="search" className="flex items-center justify-center gap-2">
+                    <Search size={16} />
+                    {t("tab_search_owner")}
                   </Tab>
                 </TabList>
               </div>
@@ -82,17 +107,17 @@ export default function QrCheckInPage() {
                             <div className="absolute w-full h-0.5 bg-teal-500 top-1/2 left-0 animate-[bounce_2s_infinite]" />
                           )}
                           <span className="text-xs text-navy-500 mt-2 font-medium">
-                            Scanning camera viewport...
+                            {t("scanning_viewport")}
                           </span>
                         </div>
                       ) : (
                         <div className="flex flex-col items-center justify-center p-6 text-center">
                           <QrCode className="text-navy-300 w-16 h-16 mb-4" />
                           <p className="text-xs font-semibold text-navy-600">
-                            Position the QR code
+                            {t("position_qr")}
                           </p>
                           <p className="text-[10px] text-navy-400 mt-1">
-                            in the center to scan
+                            {t("center_to_scan")}
                           </p>
                         </div>
                       )}
@@ -106,22 +131,22 @@ export default function QrCheckInPage() {
 
                     <Button
                       variant="outline"
-                      className="mt-6 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+                      className="mt-6 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 animate-pulse"
                       onClick={handleStartScan}
                       disabled={scanning}
                       icon={<Camera size={16} />}
                     >
-                      {scanning ? "Scanning..." : "Turn on Camera"}
+                      {scanning ? t("loading") : t("turn_on_camera")}
                     </Button>
 
                     <p className="text-xs text-navy-400 mt-4 text-center">
-                      Trouble scanning?{" "}
+                      {t("manual_prompt")}{" "}
                       <button
                         type="button"
                         onClick={() => {}}
-                        className="text-teal-600 font-semibold"
+                        className="text-teal-600 font-semibold cursor-pointer"
                       >
-                        Enter code manually
+                        {t("manual_link")}
                       </button>
                     </p>
                   </div>
@@ -131,7 +156,7 @@ export default function QrCheckInPage() {
                 <TabPanel value="manual">
                   <form onSubmit={handleEnterCode} className="max-w-md mx-auto py-8 flex flex-col gap-4">
                     <Input
-                      label="PetNexus ID or Verification Code"
+                      label={t("pnx_id_label")}
                       placeholder="e.g. PNX-2034-00087"
                       value={code}
                       onChange={(e) => setCode(e.target.value)}
@@ -139,10 +164,31 @@ export default function QrCheckInPage() {
                       required
                     />
                     <Button type="submit" fullWidth>
-                      Retrieve Pet Data
+                      {t("retrieve_data_btn")}
                     </Button>
                     <p className="text-xs text-navy-400 text-center">
-                      Enter the 12-digit code shown on the owner&apos;s app passport screen.
+                      {t("enter_code_desc")}
+                    </p>
+                  </form>
+                </TabPanel>
+
+                {/* Find User / Phone Tab */}
+                <TabPanel value="search">
+                  <form onSubmit={handleSearchOwner} className="max-w-md mx-auto py-8 flex flex-col gap-4">
+                    <Input
+                      label={t("search_owner_label")}
+                      placeholder={t("search_owner_placeholder")}
+                      value={phoneOrName}
+                      onChange={(e) => setPhoneOrName(e.target.value)}
+                      error={error}
+                      prefixIcon={<Phone size={16} />}
+                      required
+                    />
+                    <Button type="submit" fullWidth>
+                      {t("search_owner_btn")}
+                    </Button>
+                    <p className="text-xs text-navy-400 text-center">
+                      Search using registered owner name (e.g. Sarah) or phone (e.g. 081-234-5678).
                     </p>
                   </form>
                 </TabPanel>
@@ -154,10 +200,10 @@ export default function QrCheckInPage() {
         {/* Right Column — Loaded Pet Info (lg:col-span-5) */}
         <div className="lg:col-span-5">
           {scannedPet ? (
-            <Card className="animate-[slide-up_0.25s_ease-out]">
+            <Card className="animate-[slide-up_0.25s_ease-out] bg-white">
               <CardHeader>
-                <CardTitle subtitle="Pet & owner profile retrieved successfully">
-                  Check-in Profile
+                <CardTitle subtitle={t("profile_retrieved")}>
+                  {t("checkin_profile")}
                 </CardTitle>
               </CardHeader>
               <CardBody>
@@ -180,25 +226,25 @@ export default function QrCheckInPage() {
                 {/* Meta details list */}
                 <div className="space-y-4 text-sm mb-6">
                   <div className="flex justify-between py-1 border-b border-navy-100">
-                    <span className="text-navy-500 font-medium">Owner</span>
+                    <span className="text-navy-500 font-medium">{t("pet_owner")}</span>
                     <span className="text-navy-800 font-semibold">
                       {scannedPet.ownerName}
                     </span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-navy-100">
-                    <span className="text-navy-500 font-medium">Phone</span>
+                    <span className="text-navy-500 font-medium">{t("pet_phone")}</span>
                     <span className="text-navy-800 font-semibold">
                       {scannedPet.ownerPhone}
                     </span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-navy-100">
-                    <span className="text-navy-500 font-medium">Last Visit</span>
+                    <span className="text-navy-500 font-medium">{t("last_visit")}</span>
                     <span className="text-navy-800 font-semibold">
                       {scannedPet.birthDate ? "Apr 12, 2025" : "N/A"}
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-1">
-                    <span className="text-navy-500 font-medium">Status</span>
+                    <span className="text-navy-500 font-medium">{t("pet_status")}</span>
                     <StatusBadge status="checked-in" />
                   </div>
                 </div>
@@ -207,11 +253,11 @@ export default function QrCheckInPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <Link href="/patients" className="w-full">
                     <Button variant="outline" className="w-full">
-                      View Medical History
+                      {t("view_history_btn")}
                     </Button>
                   </Link>
                   <Link href="/medical-records/new" className="w-full">
-                    <Button className="w-full">Create Visit</Button>
+                    <Button className="w-full">{t("create_visit_btn")}</Button>
                   </Link>
                 </div>
               </CardBody>
@@ -220,10 +266,10 @@ export default function QrCheckInPage() {
             <Card className="border-dashed border-2 border-navy-300 bg-navy-50/20 py-16 flex flex-col items-center justify-center text-center">
               <AlertCircle className="text-navy-400 w-12 h-12 mb-4" />
               <p className="text-sm font-semibold text-navy-600">
-                No pet check-in data loaded
+                {t("no_pet_checkin_title")}
               </p>
               <p className="text-xs text-navy-400 mt-1 max-w-[240px]">
-                Scan a QR code or enter an ID manually on the left to see pet details.
+                {t("no_pet_checkin_desc")}
               </p>
             </Card>
           )}

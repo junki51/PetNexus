@@ -11,27 +11,11 @@ import { MOCK_RECORD_PET } from "@/app/lib/mock-data";
 import type { Medication, SelectOption } from "@/app/types";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
-const VISIT_TYPE_OPTIONS: SelectOption[] = [
-  { value: "Consultation", label: "Consultation" },
-  { value: "Vaccination", label: "Vaccination" },
-  { value: "Follow-up", label: "Follow-up" },
-  { value: "Emergency", label: "Emergency" },
-  { value: "Grooming", label: "Grooming" },
-];
-
-const VET_OPTIONS: SelectOption[] = [
-  { value: "Dr. Emily Carter", label: "Dr. Emily Carter" },
-  { value: "Dr. James Wilson", label: "Dr. James Wilson" },
-];
-
-const STATUS_OPTIONS: SelectOption[] = [
-  { value: "In-Progress", label: "In-Progress" },
-  { value: "Completed", label: "Completed" },
-];
+import { useLanguage } from "@/app/components/LanguageContext";
 
 export default function NewMedicalRecordPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const pet = MOCK_RECORD_PET;
 
   // Form states
@@ -51,6 +35,24 @@ export default function NewMedicalRecordPage() {
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  const VISIT_TYPE_OPTIONS: SelectOption[] = React.useMemo(() => [
+    { value: "Consultation", label: t("visit_type") + ": Consultation" },
+    { value: "Vaccination", label: t("visit_type") + ": Vaccination" },
+    { value: "Follow-up", label: t("visit_type") + ": Follow-up" },
+    { value: "Emergency", label: t("visit_type") + ": Emergency" },
+    { value: "Grooming", label: t("visit_type") + ": Grooming" },
+  ], [t]);
+
+  const VET_OPTIONS: SelectOption[] = [
+    { value: "Dr. Emily Carter", label: "Dr. Emily Carter" },
+    { value: "Dr. James Wilson", label: "Dr. James Wilson" },
+  ];
+
+  const STATUS_OPTIONS: SelectOption[] = [
+    { value: "In-Progress", label: "In-Progress" },
+    { value: "Completed", label: "Completed" },
+  ];
 
   // Medications handlers
   const handleAddMedication = () => {
@@ -100,13 +102,13 @@ export default function NewMedicalRecordPage() {
         </Link>
         <div>
           <div className="flex items-center gap-2 text-xs text-navy-500 font-medium">
-            <span>Patients</span>
+            <span>{t("patients")}</span>
             <span>/</span>
             <span>{pet.name}</span>
             <span>/</span>
-            <span className="text-teal-600 font-semibold">New Medical Record</span>
+            <span className="text-teal-600 font-semibold">{t("new_record_title")}</span>
           </div>
-          <h1 className="text-2xl font-bold text-navy-900 mt-1">New Medical Record</h1>
+          <h1 className="text-2xl font-bold text-navy-900 mt-1">{t("new_record_title")}</h1>
         </div>
       </div>
 
@@ -114,7 +116,7 @@ export default function NewMedicalRecordPage() {
         <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl p-4 flex items-center gap-3 animate-[slide-up_0.2s_ease-out]">
           <CheckCircle2 className="text-emerald-500 w-5 h-5 shrink-0" />
           <div className="text-sm font-medium">
-            Medical record saved successfully! Redirecting to patient list...
+            {t("success_save_record")}
           </div>
         </div>
       )}
@@ -122,30 +124,30 @@ export default function NewMedicalRecordPage() {
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Column — Form Fields (lg:col-span-8) */}
         <div className="lg:col-span-8 flex flex-col gap-6">
-          <Card>
+          <Card className="bg-white">
             <CardBody className="flex flex-col gap-6">
               {/* Visit Information */}
               <div>
                 <h3 className="text-sm font-bold text-navy-800 uppercase tracking-wider mb-4">
-                  Visit Information
+                  {t("visit_info")}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <Input
-                    label="Visit Date"
+                    label={t("visit_date")}
                     type="date"
                     value={visitDate}
                     onChange={(e) => setVisitDate(e.target.value)}
                     required
                   />
                   <Input
-                    label="Visit Time"
+                    label={t("visit_time")}
                     type="time"
                     value={visitTime}
                     onChange={(e) => setVisitTime(e.target.value)}
                     required
                   />
                   <Select
-                    label="Visit Type"
+                    label={t("visit_type")}
                     options={VISIT_TYPE_OPTIONS}
                     value={visitType}
                     onChange={setVisitType}
@@ -159,11 +161,11 @@ export default function NewMedicalRecordPage() {
               {/* Symptoms / Complaint */}
               <div>
                 <label className="block text-sm font-bold text-navy-800 uppercase tracking-wider mb-2">
-                  Symptoms / Complaint
+                  {t("symptoms_complaint")}
                 </label>
                 <textarea
                   className="w-full min-h-[100px] p-3 rounded-lg border border-navy-200 bg-white text-sm text-navy-800 placeholder:text-navy-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-colors"
-                  placeholder="Describe the symptoms or reason for visit..."
+                  placeholder={t("describe_symptoms")}
                   value={symptoms}
                   onChange={(e) => setSymptoms(e.target.value)}
                   rows={4}
@@ -176,11 +178,11 @@ export default function NewMedicalRecordPage() {
               {/* Diagnosis */}
               <div>
                 <label className="block text-sm font-bold text-navy-800 uppercase tracking-wider mb-2">
-                  Diagnosis
+                  {t("diagnosis")}
                 </label>
                 <textarea
                   className="w-full min-h-[80px] p-3 rounded-lg border border-navy-200 bg-white text-sm text-navy-800 placeholder:text-navy-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-colors"
-                  placeholder="Enter diagnosis..."
+                  placeholder={t("describe_diagnosis")}
                   value={diagnosis}
                   onChange={(e) => setDiagnosis(e.target.value)}
                   rows={3}
@@ -193,11 +195,11 @@ export default function NewMedicalRecordPage() {
               {/* Treatment / Procedures */}
               <div>
                 <label className="block text-sm font-bold text-navy-800 uppercase tracking-wider mb-2">
-                  Treatment / Procedures
+                  {t("treatment_procedures")}
                 </label>
                 <textarea
                   className="w-full min-h-[100px] p-3 rounded-lg border border-navy-200 bg-white text-sm text-navy-800 placeholder:text-navy-400 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-colors"
-                  placeholder="Describe treatment or procedures performed..."
+                  placeholder={t("describe_treatment")}
                   value={treatment}
                   onChange={(e) => setTreatment(e.target.value)}
                   rows={4}
@@ -210,7 +212,7 @@ export default function NewMedicalRecordPage() {
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-bold text-navy-800 uppercase tracking-wider">
-                    Medications Prescribed
+                    {t("medications_prescribed")}
                   </h3>
                   <Button
                     type="button"
@@ -218,8 +220,9 @@ export default function NewMedicalRecordPage() {
                     size="sm"
                     onClick={handleAddMedication}
                     icon={<Plus size={14} />}
+                    className="cursor-pointer"
                   >
-                    Add Medication
+                    {t("add_medication")}
                   </Button>
                 </div>
 
@@ -228,7 +231,7 @@ export default function NewMedicalRecordPage() {
                     <div key={index} className="flex gap-3 items-end flex-wrap sm:flex-nowrap">
                       <div className="flex-1 min-w-[200px]">
                         <Input
-                          placeholder="Medication Name"
+                          placeholder={t("med_name")}
                           value={med.name}
                           onChange={(e) =>
                             handleMedicationChange(index, "name", e.target.value)
@@ -237,7 +240,7 @@ export default function NewMedicalRecordPage() {
                       </div>
                       <div className="w-full sm:w-1/3 min-w-[120px]">
                         <Input
-                          placeholder="Dosage"
+                          placeholder={t("dosage")}
                           value={med.dosage}
                           onChange={(e) =>
                             handleMedicationChange(index, "dosage", e.target.value)
@@ -246,7 +249,7 @@ export default function NewMedicalRecordPage() {
                       </div>
                       <div className="flex-1 min-w-[200px]">
                         <Input
-                          placeholder="Instructions (e.g. twice daily)"
+                          placeholder={t("instructions")}
                           value={med.instructions}
                           onChange={(e) =>
                             handleMedicationChange(index, "instructions", e.target.value)
@@ -272,22 +275,22 @@ export default function NewMedicalRecordPage() {
               {/* Follow-up Plan */}
               <div>
                 <h3 className="text-sm font-bold text-navy-800 uppercase tracking-wider mb-4">
-                  Follow-up Plan
+                  {t("follow_up_plan")}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
-                    label="Follow-up Date"
+                    label={t("follow_up_date")}
                     type="date"
                     value={followUpDate}
                     onChange={(e) => setFollowUpDate(e.target.value)}
                   />
                   <div className="flex flex-col gap-1.5">
                     <label className="text-sm font-medium text-navy-700">
-                      Follow-up Notes
+                      {t("follow_up_notes")}
                     </label>
                     <input
                       type="text"
-                      placeholder="Notes for next visit"
+                      placeholder={t("notes_placeholder")}
                       className="h-10 px-3 rounded-lg border border-navy-200 bg-white text-sm text-navy-900 focus:outline-none focus:ring-2 focus:ring-teal-500/30 focus:border-teal-500 transition-colors"
                       value={followUpNote}
                       onChange={(e) => setFollowUpNote(e.target.value)}
@@ -302,14 +305,14 @@ export default function NewMedicalRecordPage() {
           <div className="flex justify-end gap-3">
             <Link href="/patients">
               <Button type="button" variant="ghost">
-                Cancel
+                {t("cancel")}
               </Button>
             </Link>
-            <Button type="button" variant="outline" icon={<FileEdit size={16} />}>
-              Save as Draft
+            <Button type="button" variant="outline" icon={<FileEdit size={16} />} className="cursor-pointer">
+              {t("save_draft")}
             </Button>
-            <Button type="submit" loading={loading} icon={<Save size={16} />}>
-              Save Record
+            <Button type="submit" loading={loading} icon={<Save size={16} />} className="cursor-pointer">
+              {t("save_record")}
             </Button>
           </div>
         </div>
@@ -317,7 +320,7 @@ export default function NewMedicalRecordPage() {
         {/* Right Column — Patient Details Sidebar (lg:col-span-4) */}
         <div className="lg:col-span-4 flex flex-col gap-6 sticky top-20">
           {/* Pet Info Card */}
-          <Card>
+          <Card className="bg-white">
             <CardBody>
               <div className="flex flex-col items-center text-center pb-6 border-b border-navy-100">
                 <Avatar name={pet.name} size="xl" className="mb-4" />
@@ -333,23 +336,23 @@ export default function NewMedicalRecordPage() {
               {/* Pet metadata list */}
               <div className="py-6 border-b border-navy-100 space-y-4 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-navy-500 font-medium">Owner</span>
+                  <span className="text-navy-500 font-medium">{t("pet_owner")}</span>
                   <span className="text-navy-800 font-semibold">{pet.ownerName}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-navy-500 font-medium">Phone</span>
+                  <span className="text-navy-500 font-medium">{t("pet_phone")}</span>
                   <span className="text-navy-800 font-semibold">{pet.ownerPhone}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-navy-500 font-medium">Weight</span>
+                  <span className="text-navy-500 font-medium">{t("pet_weight")}</span>
                   <span className="text-navy-800 font-semibold">{pet.weightKg} kg</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-navy-500 font-medium">Age</span>
-                  <span className="text-navy-800 font-semibold">2 years</span>
+                  <span className="text-navy-500 font-medium">{t("pet_age")}</span>
+                  <span className="text-navy-800 font-semibold">{t("pet_age") === "อายุ" ? "2 ปี" : "2 years"}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-navy-500 font-medium">Last Visit</span>
+                  <span className="text-navy-500 font-medium">{t("last_visit")}</span>
                   <span className="text-navy-800 font-semibold">Apr 12, 2025</span>
                 </div>
               </div>
@@ -360,28 +363,28 @@ export default function NewMedicalRecordPage() {
                   onClick={() => {}}
                   className="text-xs font-semibold text-teal-600 hover:text-teal-700 cursor-pointer"
                 >
-                  View Full History
+                  {t("view_full_history")}
                 </button>
               </div>
             </CardBody>
           </Card>
 
           {/* Admin Info Card */}
-          <Card>
+          <Card className="bg-white">
             <CardHeader>
-              <CardTitle subtitle="Record details for clinic administration">
-                Admin Info
+              <CardTitle subtitle={t("admin_info")}>
+                {t("admin_info")}
               </CardTitle>
             </CardHeader>
             <CardBody className="flex flex-col gap-4">
               <Select
-                label="Veterinarian"
+                label={t("veterinarian")}
                 options={VET_OPTIONS}
                 value={vet}
                 onChange={setVet}
               />
               <Select
-                label="Record Status"
+                label={t("record_status")}
                 options={STATUS_OPTIONS}
                 value={recordStatus}
                 onChange={setRecordStatus}

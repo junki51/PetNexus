@@ -18,8 +18,10 @@ import {
   MOCK_RECENT_ACTIVITY,
 } from "@/app/lib/mock-data";
 import Link from "next/link";
+import { useLanguage } from "@/app/components/LanguageContext";
 
 export default function DashboardPage() {
+  const { t } = useLanguage();
   const stats = MOCK_DASHBOARD_STATS;
   const today = new Date().toLocaleDateString("en-US", {
     month: "long",
@@ -33,10 +35,10 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-navy-900">
-            Good morning, Dr. Emily! 👋
+            {t("good_morning")}
           </h1>
           <p className="text-sm text-navy-500 mt-1">
-            Here&apos;s what&apos;s happening at your clinic today.
+            {t("dashboard_desc")}
           </p>
         </div>
         <div className="bg-white border border-navy-200 rounded-lg px-4 py-2 text-xs font-semibold text-navy-600 shadow-sm flex items-center gap-2 self-start sm:self-auto">
@@ -48,35 +50,35 @@ export default function DashboardPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Today's Patients"
+          label={t("today_patients")}
           value={stats.todayPatients}
-          subtitle={stats.todayPatientsChange}
+          subtitle={`${stats.todayPatientsChange.split(" ")[0]} ${t("vs_yesterday")}`}
           icon={<Users size={20} />}
           color="teal"
         />
         <StatCard
-          label="Pending Requests"
+          label={t("pending_requests")}
           value={stats.pendingRequests}
-          subtitle="Requires owner approval"
+          subtitle={t("requires_owner_approval")}
           icon={<FileClock size={20} />}
           color="blue"
-          linkLabel="View requests"
+          linkLabel={t("view_requests")}
           onLinkClick={() => {}}
         />
         <StatCard
-          label="Upcoming Appointments"
+          label={t("upcoming_appointments")}
           value={stats.upcomingAppointments}
           subtitle={stats.nextAppointmentTime}
           icon={<CalendarDays size={20} />}
           color="purple"
         />
         <StatCard
-          label="Checked-in Now"
+          label={t("checked_in_now")}
           value={stats.checkedInNow}
-          subtitle="Waiting in lobby"
+          subtitle={t("waiting_in_lobby")}
           icon={<UserCheck size={20} />}
           color="green"
-          linkLabel="View patients"
+          linkLabel={t("view_patients")}
           onLinkClick={() => {}}
         />
       </div>
@@ -85,18 +87,18 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Today's Schedule */}
         <div className="lg:col-span-2 flex flex-col h-full">
-          <Card className="flex-1">
+          <Card className="flex-1 bg-white">
             <CardHeader
               action={
                 <Link href="/calendar">
-                  <Button variant="ghost" size="sm" className="text-teal-600">
-                    View full calendar
+                  <Button variant="ghost" size="sm" className="text-teal-600 cursor-pointer">
+                    {t("view_full_calendar")}
                   </Button>
                 </Link>
               }
             >
-              <CardTitle subtitle="Time-based list of scheduled visits for today">
-                Today&apos;s Schedule
+              <CardTitle subtitle={t("today_schedule_desc")}>
+                {t("today_schedule")}
               </CardTitle>
             </CardHeader>
             <CardBody>
@@ -138,16 +140,16 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent Activity */}
-        <Card className="h-full">
+        <Card className="h-full bg-white">
           <CardHeader
             action={
-              <Button variant="ghost" size="sm" className="text-teal-600">
-                View all activity
+              <Button variant="ghost" size="sm" className="text-teal-600 cursor-pointer">
+                {t("view_all_activity")}
               </Button>
             }
           >
-            <CardTitle subtitle="Real-time log of clinic operations">
-              Recent Activity
+            <CardTitle subtitle={t("recent_activity_desc")}>
+              {t("recent_activity")}
             </CardTitle>
           </CardHeader>
           <CardBody>

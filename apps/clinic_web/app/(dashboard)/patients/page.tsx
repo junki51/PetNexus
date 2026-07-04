@@ -13,27 +13,29 @@ import { Pagination } from "@/app/components/ui/Pagination";
 import { MOCK_PATIENTS } from "@/app/lib/mock-data";
 import type { SelectOption } from "@/app/types";
 import Link from "next/link";
-
-const SPECIES_OPTIONS: SelectOption[] = [
-  { value: "all", label: "All Species" },
-  { value: "dog", label: "Dogs" },
-  { value: "cat", label: "Cats" },
-];
-
-const STATUS_OPTIONS: SelectOption[] = [
-  { value: "all", label: "All Status" },
-  { value: "approved", label: "Approved" },
-  { value: "pending", label: "Pending" },
-  { value: "rejected", label: "Rejected" },
-  { value: "revoked", label: "Revoked" },
-];
+import { useLanguage } from "@/app/components/LanguageContext";
 
 export default function PatientsPage() {
+  const { t } = useLanguage();
   const [search, setSearch] = useState("");
   const [species, setSpecies] = useState("all");
   const [status, setStatus] = useState("all");
   const [page, setPage] = useState(1);
   const limit = 6;
+
+  const SPECIES_OPTIONS: SelectOption[] = useMemo(() => [
+    { value: "all", label: t("all_species") },
+    { value: "dog", label: "Dogs" },
+    { value: "cat", label: "Cats" },
+  ], [t]);
+
+  const STATUS_OPTIONS: SelectOption[] = useMemo(() => [
+    { value: "all", label: t("all_status") },
+    { value: "approved", label: "Approved" },
+    { value: "pending", label: "Pending" },
+    { value: "rejected", label: "Rejected" },
+    { value: "revoked", label: "Revoked" },
+  ], [t]);
 
   // Filter logic
   const filteredPatients = useMemo(() => {
@@ -60,13 +62,13 @@ export default function PatientsPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-navy-900">Patients</h1>
+          <h1 className="text-2xl font-bold text-navy-900">{t("patients_title")}</h1>
           <p className="text-sm text-navy-500 mt-1">
-            Manage and view all your clinic patients.
+            {t("patients_desc")}
           </p>
         </div>
-        <Button icon={<Plus size={16} />} className="self-start sm:self-auto">
-          Add Patient
+        <Button icon={<Plus size={16} />} className="self-start sm:self-auto cursor-pointer">
+          {t("add_patient")}
         </Button>
       </div>
 
@@ -80,7 +82,7 @@ export default function PatientsPage() {
                 setSearch(val);
                 setPage(1);
               }}
-              placeholder="Search by pet or owner name..."
+              placeholder={t("search_placeholder")}
             />
           </div>
 
@@ -110,17 +112,17 @@ export default function PatientsPage() {
       </Card>
 
       {/* Patient Table Card */}
-      <Card padding="none" className="overflow-hidden">
+      <Card padding="none" className="overflow-hidden bg-white">
         <Table>
           <TableHead>
             <TableRow hoverable={false}>
-              <TableTh>Pet Name</TableTh>
-              <TableTh>Species</TableTh>
-              <TableTh>Owner</TableTh>
-              <TableTh>Status</TableTh>
-              <TableTh>Last Visit</TableTh>
+              <TableTh>{t("pet_name_col")}</TableTh>
+              <TableTh>{t("species_col")}</TableTh>
+              <TableTh>{t("owner_col")}</TableTh>
+              <TableTh>{t("status_col")}</TableTh>
+              <TableTh>{t("last_visit")}</TableTh>
               <TableTh align="center" width="80px">
-                Actions
+                {t("actions_col")}
               </TableTh>
             </TableRow>
           </TableHead>
@@ -195,7 +197,7 @@ export default function PatientsPage() {
                   className="py-16 text-center text-navy-400 text-sm font-medium"
                 >
                   <PawPrint size={40} className="text-navy-300 mx-auto mb-3" />
-                  No patients match the filters.
+                  {t("no_patients_found")}
                 </td>
               </TableRow>
             )}
@@ -210,7 +212,17 @@ export default function PatientsPage() {
             onPageChange={setPage}
             total={filteredPatients.length}
             limit={limit}
+            showInfo={false}
           />
+          {filteredPatients.length > 0 && (
+            <p className="text-xs text-navy-400 mt-2 text-center sm:text-left">
+              {t("showing_results", {
+                from: (page - 1) * limit + 1,
+                to: Math.min(page * limit, filteredPatients.length),
+                total: filteredPatients.length,
+              })}
+            </p>
+          )}
         </div>
       </Card>
     </div>

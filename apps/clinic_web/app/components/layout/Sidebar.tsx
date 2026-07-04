@@ -16,22 +16,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
-
-interface NavItem {
-  label: string;
-  href: string;
-  icon: React.ReactNode;
-}
-
-const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard",       href: "/(dashboard)",              icon: <LayoutDashboard size={18} /> },
-  { label: "QR Pet Data",     href: "/qr-pet-data",              icon: <QrCode size={18} /> },
-  { label: "Patients",        href: "/patients",                 icon: <Users size={18} /> },
-  { label: "Calendar",        href: "/calendar",                 icon: <Calendar size={18} /> },
-  { label: "Medical Records", href: "/medical-records",          icon: <FileText size={18} /> },
-  { label: "Reports",         href: "/reports",                  icon: <BarChart2 size={18} /> },
-  { label: "Settings",        href: "/settings",                 icon: <Settings size={18} /> },
-];
+import { useLanguage } from "@/app/components/LanguageContext";
 
 interface SidebarProps {
   clinicName?: string;
@@ -40,11 +25,22 @@ interface SidebarProps {
 export function Sidebar({ clinicName = "Happy Paws Veterinary Clinic" }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { t } = useLanguage();
 
   function isActive(href: string): boolean {
     if (href === "/(dashboard)") return pathname === "/";
     return pathname.startsWith(href);
   }
+
+  const navItems = [
+    { label: t("dashboard"),       href: "/(dashboard)",              icon: <LayoutDashboard size={18} /> },
+    { label: t("qr_pet_data"),     href: "/qr-pet-data",              icon: <QrCode size={18} /> },
+    { label: t("patients"),        href: "/patients",                 icon: <Users size={18} /> },
+    { label: t("calendar"),        href: "/calendar",                 icon: <Calendar size={18} /> },
+    { label: t("medical_records"), href: "/medical-records",          icon: <FileText size={18} /> },
+    { label: t("reports"),         href: "/reports",                  icon: <BarChart2 size={18} /> },
+    { label: t("settings"),        href: "/settings",                 icon: <Settings size={18} /> },
+  ];
 
   const renderSidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -55,7 +51,7 @@ export function Sidebar({ clinicName = "Happy Paws Veterinary Clinic" }: Sidebar
         </div>
         <div>
           <p className="font-bold text-white text-sm leading-tight">PetNexus</p>
-          <p className="text-teal-400 text-xs font-medium leading-tight">Clinic Platform</p>
+          <p className="text-teal-400 text-xs font-medium leading-tight">{t("clinic_platform")}</p>
         </div>
       </div>
 
@@ -67,7 +63,7 @@ export function Sidebar({ clinicName = "Happy Paws Veterinary Clinic" }: Sidebar
       {/* Nav items */}
       <nav className="flex-1 overflow-y-auto py-3 px-3">
         <ul className="flex flex-col gap-0.5">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const active = isActive(item.href);
             return (
               <li key={item.href}>
@@ -100,7 +96,7 @@ export function Sidebar({ clinicName = "Happy Paws Veterinary Clinic" }: Sidebar
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-navy-400 hover:bg-white/10 hover:text-white transition-all duration-150"
         >
           <HelpCircle size={18} />
-          Help & Support
+          {t("help_support")}
         </Link>
       </div>
     </div>

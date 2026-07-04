@@ -10,8 +10,10 @@ import { Avatar } from "@/app/components/ui/Avatar";
 import { Badge } from "@/app/components/ui/Badge";
 import { Pagination } from "@/app/components/ui/Pagination";
 import Link from "next/link";
+import { useLanguage } from "@/app/components/LanguageContext";
 
 export default function MedicalRecordsListPage() {
+  const { t } = useLanguage();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const limit = 5;
@@ -87,13 +89,13 @@ export default function MedicalRecordsListPage() {
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-navy-900">Medical Records</h1>
+          <h1 className="text-2xl font-bold text-navy-900">{t("medical_records")}</h1>
           <p className="text-sm text-navy-500 mt-1">
             Browse and view historical medical records for checked-in patients.
           </p>
         </div>
         <Link href="/medical-records/new" className="self-start sm:self-auto">
-          <Button icon={<Plus size={16} />}>New Record</Button>
+          <Button icon={<Plus size={16} />} className="cursor-pointer">{t("new_record_title")}</Button>
         </Link>
       </div>
 
@@ -107,21 +109,21 @@ export default function MedicalRecordsListPage() {
                 setSearch(val);
                 setPage(1);
               }}
-              placeholder="Search by pet name, visit type, or description..."
+              placeholder={t("search_placeholder")}
             />
           </div>
         </div>
       </Card>
 
       {/* Records Table Card */}
-      <Card padding="none" className="overflow-hidden">
+      <Card padding="none" className="overflow-hidden bg-white">
         <Table>
           <TableHead>
             <TableRow hoverable={false}>
-              <TableTh>Visit Date</TableTh>
-              <TableTh>Pet Name</TableTh>
-              <TableTh>Veterinarian</TableTh>
-              <TableTh>Visit Type</TableTh>
+              <TableTh>{t("visit_date")}</TableTh>
+              <TableTh>{t("pet_name_col")}</TableTh>
+              <TableTh>{t("veterinarian")}</TableTh>
+              <TableTh>{t("visit_type")}</TableTh>
               <TableTh>Symptoms / Diagnosis Excerpt</TableTh>
               <TableTh align="center" width="80px">
                 View
@@ -196,7 +198,17 @@ export default function MedicalRecordsListPage() {
             onPageChange={setPage}
             total={filteredRecords.length}
             limit={limit}
+            showInfo={false}
           />
+          {filteredRecords.length > 0 && (
+            <p className="text-xs text-navy-400 mt-2 text-center sm:text-left">
+              {t("showing_results", {
+                from: (page - 1) * limit + 1,
+                to: Math.min(page * limit, filteredRecords.length),
+                total: filteredRecords.length,
+              })}
+            </p>
+          )}
         </div>
       </Card>
     </div>
