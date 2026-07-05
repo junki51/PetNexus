@@ -146,6 +146,31 @@ func TestPetsMigrationMatchesModelAndUsesGuardedConstraints(t *testing.T) {
 	}
 }
 
+func TestClinicProfilesMigrationMatchesModelAndUsesGuardedConstraints(t *testing.T) {
+	for _, fragment := range []string{
+		"CREATE TABLE IF NOT EXISTS clinic_profiles",
+		"id UUID PRIMARY KEY DEFAULT gen_random_uuid()",
+		"user_id UUID NOT NULL",
+		"clinic_name VARCHAR(200) NOT NULL",
+		"phone_number VARCHAR(30)",
+		"email VARCHAR(255)",
+		"address TEXT",
+		"created_at TIMESTAMPTZ NOT NULL DEFAULT now()",
+		"updated_at TIMESTAMPTZ NOT NULL DEFAULT now()",
+	} {
+		if !strings.Contains(createClinicProfilesTableSQL, fragment) {
+			t.Fatalf("clinic_profiles table SQL does not include %q", fragment)
+		}
+	}
+	if !strings.Contains(createClinicProfilesUserIDUniqueIndexSQL, "CREATE UNIQUE INDEX IF NOT EXISTS idx_clinic_profiles_user_id_unique") {
+		t.Fatal("clinic_profiles user_id unique index must be idempotent")
+	}
+	if !strings.Contains(ensureClinicProfilesUserForeignKeySQL, "IF NOT EXISTS") ||
+		!strings.Contains(ensureClinicProfilesUserForeignKeySQL, "FOREIGN KEY (user_id) REFERENCES users(id)") {
+		t.Fatal("clinic_profiles foreign key must be guarded and reference users(id)")
+	}
+}
+
 func allMigrationSQL() string {
 	var builder strings.Builder
 	for _, step := range migrationSteps {

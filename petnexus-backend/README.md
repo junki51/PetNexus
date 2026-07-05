@@ -4,7 +4,7 @@ PetNexus is a digital pet passport and owner-controlled pet identity platform. T
 
 ## Stack
 
-Sprint 5 uses Go, Gin, godotenv, PostgreSQL, GORM, Docker Compose, bcrypt, and JWT access tokens. Safe SQL migrations run automatically at startup; the versioned SQL files can also be applied manually with `psql`.
+Sprint 6 uses Go, Gin, godotenv, PostgreSQL, GORM, Docker Compose, bcrypt, and JWT access tokens. Safe SQL migrations run automatically at startup; the versioned SQL files can also be applied manually with `psql`.
 
 ## Architecture
 
@@ -98,11 +98,12 @@ Get-Content .\migrations\001_create_enums.sql | docker exec -i petnexus-postgres
 Get-Content .\migrations\002_create_users.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
 Get-Content .\migrations\003_create_owner_profiles.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
 Get-Content .\migrations\004_create_breeds_and_pets.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
+Get-Content .\migrations\005_create_clinic_profiles.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
 ```
 
 If Docker shows a different container name, replace `petnexus-postgres` in the
 commands. These migrations create the currently implemented auth, owner
-profile, breed catalog, and basic pet profile schema only.
+profile, breed catalog, basic pet profile, and clinic profile schema only.
 
 ## Run the backend
 
@@ -537,9 +538,135 @@ try {
 }
 ```
 
+## Sprint 6: Clinic Profile Foundation
+
+Sprint 6 adds one settings/identity profile for each authenticated clinic-side
+account. The existing role `clinic_staff` is used; no new enum value is needed.
+This foundation does not include staff management, owners/patients, QR,
+authorization, visits, medical records, calendar, or reports.
+
+New table:
+
+```text
+users 1:1 clinic_profiles
+```
+
+Clinic profile fields:
+
+```text
+id, user_id, clinic_name, phone_number, email, address, created_at, updated_at
+```
+
+`clinic_name` is required. Phone, email, and address are optional. `user_id`
+always comes from JWT and is never accepted or returned by the profile API.
+
+Endpoints:
+
+```text
+POST  /api/clinic/profile
+GET   /api/clinic/profile
+PATCH /api/clinic/profile
+```
+
+All three endpoints require `Authorization: Bearer <token>` and role
+`clinic_staff`. Missing/invalid authentication returns 401; an owner token
+returns 403. GET/PATCH before profile creation returns 404. Creating a second
+profile returns 409.
+
+Example create request:
+
+```json
+{
+  "clinic_name": "Happy Paws Veterinary Clinic",
+  "phone_number": "02-123-4567",
+  "email": "contact@happypaws.example",
+  "address": "123 Pet Street, Bangkok"
+}
+```
+
+Example success response:
+
+```json
+{
+  "success": true,
+  "message": "Clinic profile created successfully",
+  "data": {
+    "id": "65eedfa2-4514-4ec8-8e14-c12b3354b762",
+    "clinic_name": "Happy Paws Veterinary Clinic",
+    "phone_number": "02-123-4567",
+    "email": "contact@happypaws.example",
+    "address": "123 Pet Street, Bangkok",
+    "created_at": "2026-07-05T09:00:00Z",
+    "updated_at": "2026-07-05T09:00:00Z"
+  }
+}
+```
+
+Example partial update:
+
+```json
+{
+  "clinic_name": "Happy Paws Clinic Bangkok",
+  "phone_number": "02-999-9999"
+}
+```
+
+### Sprint 6 curl test
+
+Start PostgreSQL and `go run ./cmd/api`, then register/login a clinic staff
+account. Use a unique email if repeating the test.
+
+```bash
+curl -X POST http://localhost:8080/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"clinic@example.com","phone":"021234567","password":"password123","role":"clinic_staff"}'
+
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"clinic@example.com","password":"password123"}'
+```
+
+Copy `data.accessToken` from login and replace `<clinic_access_token>`:
+
+```bash
+# Before create: expect 404
+curl http://localhost:8080/api/clinic/profile \
+  -H "Authorization: Bearer <clinic_access_token>"
+
+# Create: expect 201
+curl -X POST http://localhost:8080/api/clinic/profile \
+  -H "Authorization: Bearer <clinic_access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"clinic_name":"Happy Paws Veterinary Clinic","phone_number":"02-123-4567","email":"contact@happypaws.example","address":"123 Pet Street, Bangkok"}'
+
+# Get: expect 200
+curl http://localhost:8080/api/clinic/profile \
+  -H "Authorization: Bearer <clinic_access_token>"
+
+# Patch: expect 200
+curl -X PATCH http://localhost:8080/api/clinic/profile \
+  -H "Authorization: Bearer <clinic_access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"clinic_name":"Happy Paws Clinic Bangkok","phone_number":"02-999-9999"}'
+
+# Repeat create: expect 409
+curl -X POST http://localhost:8080/api/clinic/profile \
+  -H "Authorization: Bearer <clinic_access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{"clinic_name":"Duplicate Clinic"}'
+
+# No token: expect 401
+curl http://localhost:8080/api/clinic/profile
+```
+
+To verify owner-role protection, login as an `owner` and call the same GET with
+the owner token; expect HTTP 403.
+
 ## Current status
 
-Sprint 5 adds the `breeds` and `pets` schema, idempotent breed seed data, public breed listing, and owner-only pet create/list/detail/patch APIs. Sprint 1-4 health, auth, and owner profile endpoints remain unchanged.
+Sprint 6 adds the `clinic_profiles` schema and clinic-staff-only create/get/PATCH
+profile APIs. Sprint 1–5 health, auth, owner profile, breed, and pet endpoints
+remain unchanged.
 
 Pet Passport, QR sharing, clinic access requests, authorization decisions, visits, timelines, notifications, real file uploads, Flutter UI, and clinic web UI are deliberately not implemented in this sprint.
 
@@ -547,4 +674,6 @@ Pet Passport, QR sharing, clinic access requests, authorization decisions, visit
 
 ## Recommended next step
 
-Deploy/redeploy to Render and repeat the Sprint 5 smoke flow. Plan Pet Passport or QR sharing only as a separate, explicitly scoped sprint.
+Deploy/redeploy to Render and repeat the Sprint 6 clinic profile smoke flow.
+Plan QR, clinic access, visits, or staff management only as separate,
+explicitly scoped sprints.
