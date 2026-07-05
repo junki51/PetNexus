@@ -7,12 +7,16 @@ import 'features/auth/screens/auth_gate.dart';
 import 'features/auth/screens/first_screen.dart';
 import 'features/auth/screens/login_screen.dart';
 import 'features/auth/screens/register_screen.dart';
+import 'features/owner_profile/controllers/owner_profile_controller.dart';
 import 'features/owner_profile/screens/owner_profile.dart';
 
 void main() {
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthController())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthController()),
+        ChangeNotifierProvider(create: (_) => OwnerProfileController()),
+      ],
       child: const MyApp(),
     ),
   );

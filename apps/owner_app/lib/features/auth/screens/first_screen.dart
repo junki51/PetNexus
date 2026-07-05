@@ -1,5 +1,5 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:owner_app/features/auth/controllers/auth_controller.dart';
 import 'package:provider/provider.dart';
 
@@ -46,12 +46,12 @@ class _FirstScreenContent extends StatelessWidget {
   static const double _curveWidth = 250;
   static const double _curveHeight = 60;
   static const double _horizontalPadding = 32;
-  static const double _topPadding = 40;
-  static const double _bottomPadding = 40;
-  static const double _taglineSpacing = 40;
-  static const double _buttonSpacing = 16;
-  static const double _sectionSpacing = 40;
-  static const double _socialSpacing = 55;
+  static const double _topPadding = 48;
+  static const double _bottomPadding = 48;
+  static const double _taglineSpacing = 45;
+  static const double _buttonSpacing = 24;
+  static const double _sectionSpacing = 43;
+  static const double _socialSpacing = 64;
   static const double _buttonHeight = 56;
 
   @override
@@ -96,12 +96,12 @@ class _FirstScreenContent extends StatelessWidget {
             ),
             AppSpacing.h(context, _sectionSpacing),
             Text('หรือเข้าสู่ระบบด้วย', style: AppTextStyles.caption(context)),
-            AppSpacing.h(context, _socialSpacing),
+            AppSpacing.h(context, _sectionSpacing),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 AppSocialButton(
-                  icon: FontAwesomeIcons.google,
+                  icon: CupertinoIcons.globe,
                   color: AppColors.google,
                   onTap: () => _showComingSoon(context),
                 ),

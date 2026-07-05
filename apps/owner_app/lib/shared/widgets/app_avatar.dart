@@ -17,6 +17,10 @@ class AppAvatar extends StatelessWidget {
 
   final double? radius;
 
+  final bool showUploadButton;
+
+  final IconData editIcon;
+
   const AppAvatar({
     super.key,
     this.imageFile,
@@ -24,6 +28,8 @@ class AppAvatar extends StatelessWidget {
     required this.onTap,
     this.buttonText = "Upload Image",
     this.radius,
+    this.showUploadButton = true,
+    this.editIcon = Icons.camera_alt,
   });
 
   @override
@@ -67,7 +73,7 @@ class AppAvatar extends StatelessWidget {
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
-                  Icons.camera_alt,
+                  editIcon,
                   color: Colors.white,
                   size: context.icon(18),
                 ),
@@ -76,21 +82,23 @@ class AppAvatar extends StatelessWidget {
           ),
         ),
 
-        SizedBox(
-          height: context.nh(12),
-        ),
+        if (showUploadButton) ...[
+          SizedBox(
+            height: context.nh(12),
+          ),
 
-        TextButton.icon(
-          onPressed: onTap,
-          icon: Icon(
-            Icons.upload,
-            size: context.icon(18),
+          TextButton.icon(
+            onPressed: onTap,
+            icon: Icon(
+              Icons.upload,
+              size: context.icon(18),
+            ),
+            label: Text(
+              buttonText,
+              style: AppTextStyles.body(context),
+            ),
           ),
-          label: Text(
-            buttonText,
-            style: AppTextStyles.body(context),
-          ),
-        ),
+        ],
       ],
     );
   }

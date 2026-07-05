@@ -46,7 +46,7 @@ class AppTextStyles {
 
   static TextStyle caption(BuildContext context) {
     return TextStyle(
-      fontSize: context.nf(13),
+      fontSize: context.nf(15),
       color: AppColors.textSecondary,
       fontWeight: FontWeight.bold,
     );
