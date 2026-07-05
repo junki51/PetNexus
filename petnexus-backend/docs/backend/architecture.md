@@ -1,0 +1,111 @@
+# Backend Architecture
+
+## Dependency direction
+
+PetNexus uses one layered dependency direction:
+
+```text
+Handler → Service → Repository → Database
+```
+
+HTTP and database concerns must not leak across layers.
+
+## Handler
+
+Handlers translate HTTP requests into service calls. A handler should:
+
+- parse JSON body, query parameters, and path parameters
+- read the authenticated user from Gin context
+- call a service method
+- map typed application errors to HTTP responses
+- use the shared success/error response helper
+- avoid direct GORM or business-rule logic
+
+Files live in `internal/handlers`.
+
+## Service
+
+Services own application behavior. A service should:
+
+- validate and normalize input
+- apply business and permission rules
+- resolve ownership from authenticated identity
+- coordinate repositories
+- map database models to safe response DTOs
+- return typed application errors without exposing secrets
+
+Files live in `internal/services`.
+
+## Repository
+
+Repositories contain database access only. A repository should:
+
+- perform GORM queries and updates
+- translate record-not-found and duplicate-key conditions into repository errors
+- return wrapped database errors with useful internal context
+- avoid HTTP status codes, Gin context, and permission decisions
+
+Files live in `internal/repositories`.
+
+## Database
+
+PostgreSQL is the source of truth. Database responsibilities include:
+
+- connection using `DATABASE_URL` or local `DB_*` configuration
+- startup connectivity verification
+- guarded, idempotent schema migration
+- foreign keys, unique indexes, checks, and lookup indexes
+
+Runtime migration is explicit SQL in `internal/database/migrate.go`; matching
+manual files are in `migrations/`. Do not introduce unsafe GORM AutoMigrate
+changes against existing tables or unguarded `DROP/ALTER CONSTRAINT` behavior.
+
+## Supporting layers
+
+| Directory | Responsibility |
+| --- | --- |
+| `cmd/api` | Process startup and dependency wiring |
+| `internal/config` | Environment-backed configuration |
+| `internal/database` | PostgreSQL connection and startup migration |
+| `internal/models` | GORM database entities |
+| `internal/dto` | Request and response contracts |
+| `internal/middleware` | JWT and role guards |
+| `internal/routes` | Endpoint registration |
+| `internal/utils` | Response, error, JWT, and password helpers |
+
+## Ownership conventions
+
+- Current identity always comes from JWT.
+- Clients must not send `user_id`.
+- Pet clients must not send `owner_profile_id`.
+- Owner profile ownership is JWT user → `owner_profiles.user_id`.
+- Clinic profile ownership is JWT user → `clinic_profiles.user_id`.
+- Pet ownership is JWT user → owner profile → `pets.owner_profile_id`.
+- Cross-owner pet lookup returns not found rather than exposing existence.
+
+## API response convention
+
+Success:
+
+```json
+{
+  "success": true,
+  "message": "Operation completed",
+  "data": {}
+}
+```
+
+Error:
+
+```json
+{
+  "success": false,
+  "message": "Operation failed",
+  "error": {
+    "code": "MACHINE_READABLE_CODE",
+    "details": "Safe client-facing details"
+  }
+}
+```
+
+See [API reference](./api-reference.md) for current contracts.
