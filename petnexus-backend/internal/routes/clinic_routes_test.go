@@ -38,7 +38,7 @@ func (s *clinicProfileServiceSpy) UpdateMyClinicProfile(userID string, req dto.U
 	return clinicRouteTestResponse(), nil
 }
 
-func TestClinicProfileRoutesRequireAuthenticationAndClinicStaffRole(t *testing.T) {
+func TestClinicProfileRoutesRequireAuthenticationAndClinicRole(t *testing.T) {
 	router, _ := newClinicRouteTestRouter()
 
 	withoutToken := httptest.NewRecorder()
@@ -57,28 +57,32 @@ func TestClinicProfileRoutesRequireAuthenticationAndClinicStaffRole(t *testing.T
 	}
 }
 
-func TestClinicStaffCanGetOwnClinicProfile(t *testing.T) {
-	router, spy := newClinicRouteTestRouter()
-	userID := uuid.NewString()
-	token := clinicRouteTestToken(t, userID, models.RoleClinicStaff)
-	request := httptest.NewRequest(http.MethodGet, "/api/clinic/profile", nil)
-	request.Header.Set("Authorization", "Bearer "+token)
-	response := httptest.NewRecorder()
+func TestClinicAndLegacyClinicStaffCanGetOwnClinicProfile(t *testing.T) {
+	for _, role := range []string{models.RoleClinic, models.RoleClinicStaff} {
+		t.Run(role, func(t *testing.T) {
+			router, spy := newClinicRouteTestRouter()
+			userID := uuid.NewString()
+			token := clinicRouteTestToken(t, userID, role)
+			request := httptest.NewRequest(http.MethodGet, "/api/clinic/profile", nil)
+			request.Header.Set("Authorization", "Bearer "+token)
+			response := httptest.NewRecorder()
 
-	router.ServeHTTP(response, request)
+			router.ServeHTTP(response, request)
 
-	if response.Code != http.StatusOK {
-		t.Fatalf("status = %d, want 200; body=%s", response.Code, response.Body.String())
-	}
-	if spy.currentUserID != userID {
-		t.Fatalf("service user ID = %q, want JWT user ID %q", spy.currentUserID, userID)
+			if response.Code != http.StatusOK {
+				t.Fatalf("status = %d, want 200; body=%s", response.Code, response.Body.String())
+			}
+			if spy.currentUserID != userID {
+				t.Fatalf("service user ID = %q, want JWT user ID %q", spy.currentUserID, userID)
+			}
+		})
 	}
 }
 
 func TestCreateClinicProfileUsesJWTIdentityAndDoesNotExposeUserID(t *testing.T) {
 	router, spy := newClinicRouteTestRouter()
 	userID := uuid.NewString()
-	token := clinicRouteTestToken(t, userID, models.RoleClinicStaff)
+	token := clinicRouteTestToken(t, userID, models.RoleClinic)
 	body := `{
 		"user_id":"` + uuid.NewString() + `",
 		"clinic_name":"Happy Paws Clinic",

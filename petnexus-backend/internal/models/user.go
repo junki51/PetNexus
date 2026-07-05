@@ -8,6 +8,7 @@ import (
 
 const (
 	RoleOwner       = "owner"
+	RoleClinic      = "clinic"
 	RoleClinicStaff = "clinic_staff"
 	RoleAdmin       = "admin"
 )

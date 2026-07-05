@@ -134,6 +134,7 @@ Current roles relevant to frontend integration:
 | Role | Auth APIs | Owner Profile APIs | Pet APIs | Breed APIs |
 | --- | --- | --- | --- | --- |
 | `owner` | Yes | Yes | Yes | Yes (public) |
+| `clinic` | Yes | No (403) | No (403) | Yes (public) |
 | `clinic_staff` | Yes | No (403) | No (403) | Yes (public) |
 | `admin` | Public registration blocked | No | No | Yes (public) |
 
@@ -148,9 +149,10 @@ Owner and pet ownership rules:
 - Pet creation/list/detail/update requires an existing owner profile; otherwise
   the backend returns 404 `OWNER_PROFILE_REQUIRED`.
 
-Clinic note: `clinic_staff` can currently register/login and call `/api/me`,
-but no clinic profile, patient list, access request, medical record, or clinic
-dashboard API exists yet.
+Clinic note: `clinic` is the canonical Clinic Web Dashboard role;
+`clinic_staff` remains accepted for compatibility. Sprint 6 adds Clinic Profile
+settings, but patient lists, access requests, medical records, and other clinic
+workflow APIs do not exist yet.
 
 ## 5. UI Label Mapping
 
@@ -263,8 +265,9 @@ frontend applications never receive or use database credentials.
 ## 7. Sprint 3 — Auth Integration
 
 Passwords are hashed with bcrypt and never returned. JWT is the only current
-session mechanism. Public registration accepts `owner` and `clinic_staff`;
-the Owner Mobile App must always send `owner`.
+session mechanism. Public registration accepts `owner`, `clinic`, and
+legacy-compatible `clinic_staff`; the Owner Mobile App must always send
+`owner`.
 
 ### `POST /api/auth/register`
 

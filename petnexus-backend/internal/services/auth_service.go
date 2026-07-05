@@ -179,12 +179,12 @@ func validateRegistration(email, phone, password, role string) error {
 	if role == "" {
 		return validationError("Role is required")
 	}
-	if role != models.RoleOwner && role != models.RoleClinicStaff {
+	if role != models.RoleOwner && role != models.RoleClinic && role != models.RoleClinicStaff {
 		return utils.NewAppError(
 			http.StatusForbidden,
 			"FORBIDDEN_ROLE",
 			"Role is not allowed",
-			"Public registration allows only owner or clinic_staff",
+			"Public registration allows only owner, clinic, or clinic_staff",
 			nil,
 		)
 	}

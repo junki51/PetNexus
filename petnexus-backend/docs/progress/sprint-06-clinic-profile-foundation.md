@@ -9,10 +9,11 @@ one clinic profile bound to the currently authenticated clinic-side user.
 
 ## Role assumption
 
-The existing `clinic_staff` role is the clinic/vet role for this sprint. Public
-registration already supports it, the PostgreSQL `user_role` enum already
-contains it, and the role middleware already enforces it. No enum migration or
-new role was added.
+`clinic` is the canonical Clinic Web Dashboard role. PostgreSQL's existing
+`user_role` enum and guarded startup migration already contain both `clinic`
+and the legacy `clinic_staff` value, so no enum migration was needed. Public
+registration and Clinic Profile routes accept `clinic`; `clinic_staff` remains
+accepted for backward compatibility.
 
 ## Completed
 
@@ -26,6 +27,8 @@ new role was added.
 - Added required clinic-name validation, optional phone/email/address
   normalization, email format validation, and partial update behavior.
 - Added duplicate protection in service logic and the database unique index.
+- Added canonical `clinic` public registration and Clinic Profile route access;
+  legacy `clinic_staff` remains compatible and owner remains forbidden.
 - Added migration, service, route-role, and identity-spoofing regression tests.
 
 ## Database
@@ -55,7 +58,8 @@ GET   /api/clinic/profile
 PATCH /api/clinic/profile
 ```
 
-All endpoints require JWT authentication and role `clinic_staff`.
+All endpoints require JWT authentication and a clinic-side role (`clinic`, or
+legacy-compatible `clinic_staff`). Owner remains forbidden.
 
 | Situation | Status/code |
 | --- | --- |
@@ -96,6 +100,9 @@ Integrated or updated:
 - `gofmt` completed.
 - `go test ./...` passed after implementation and Sprint 6 tests were added.
 - Existing Sprint 1–5 regression tests remain green.
+- Fresh role-specific PostgreSQL/API smoke test passed: registration, login,
+  and `/api/me` returned role `clinic`; clinic create/get/PATCH succeeded; owner
+  access returned 403.
 - Fresh local PostgreSQL/API smoke test passed:
   - health and database health
   - unauthenticated clinic profile request returned 401

@@ -62,7 +62,7 @@ func Register(router *gin.Engine, deps Dependencies) {
 	clinic := api.Group(
 		"/clinic",
 		middleware.AuthMiddleware(deps.Config.JWTSecret),
-		middleware.RequireRole(models.RoleClinicStaff),
+		middleware.RequireRole(models.RoleClinic, models.RoleClinicStaff),
 	)
 	clinic.POST("/profile", deps.ClinicHandler.CreateClinicProfile)
 	clinic.GET("/profile", deps.ClinicHandler.GetMyClinicProfile)

@@ -205,7 +205,8 @@ curl.exe -X POST http://localhost:8080/api/auth/register `
   -d "{\"email\":\"admin@example.com\",\"phone\":\"0800000000\",\"password\":\"password123\",\"role\":\"admin\"}"
 ```
 
-Expected: HTTP 403 with `FORBIDDEN_ROLE`. Public registration supports only `owner` and `clinic_staff`.
+Expected: HTTP 403 with `FORBIDDEN_ROLE`. Public registration supports `owner`,
+`clinic`, and legacy-compatible `clinic_staff` roles.
 
 ## Sprint 4: Owner Profile
 
@@ -541,7 +542,9 @@ try {
 ## Sprint 6: Clinic Profile Foundation
 
 Sprint 6 adds one settings/identity profile for each authenticated clinic-side
-account. The existing role `clinic_staff` is used; no new enum value is needed.
+account. Role `clinic` is the canonical Clinic Web Dashboard role. Existing
+`clinic_staff` accounts remain accepted for backward compatibility; no enum
+migration is needed because both values already exist safely.
 This foundation does not include staff management, owners/patients, QR,
 authorization, visits, medical records, calendar, or reports.
 
@@ -568,10 +571,11 @@ GET   /api/clinic/profile
 PATCH /api/clinic/profile
 ```
 
-All three endpoints require `Authorization: Bearer <token>` and role
-`clinic_staff`. Missing/invalid authentication returns 401; an owner token
-returns 403. GET/PATCH before profile creation returns 404. Creating a second
-profile returns 409.
+All three endpoints require `Authorization: Bearer <token>` and a clinic-side
+role (`clinic`, with `clinic_staff` retained for compatibility).
+Missing/invalid authentication returns 401; an owner token returns 403.
+GET/PATCH before profile creation returns 404. Creating a second profile
+returns 409.
 
 Example create request:
 
@@ -619,7 +623,7 @@ account. Use a unique email if repeating the test.
 ```bash
 curl -X POST http://localhost:8080/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"email":"clinic@example.com","phone":"021234567","password":"password123","role":"clinic_staff"}'
+  -d '{"email":"clinic@example.com","phone":"021234567","password":"password123","role":"clinic"}'
 
 curl -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
@@ -661,6 +665,66 @@ curl http://localhost:8080/api/clinic/profile
 
 To verify owner-role protection, login as an `owner` and call the same GET with
 the owner token; expect HTTP 403.
+
+### Sprint 6 PowerShell test
+
+```powershell
+$baseUrl = "http://localhost:8080"
+$suffix = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds()
+$password = "password123"
+$clinicEmail = "clinic.$suffix@example.com"
+
+# 1. Register clinic
+$clinicRegisterBody = @{
+  email = $clinicEmail
+  phone = "021234567"
+  password = $password
+  role = "clinic"
+} | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "$baseUrl/api/auth/register" -ContentType "application/json" -Body $clinicRegisterBody
+
+# 2. Login clinic and save token
+$clinicLoginBody = @{ email = $clinicEmail; password = $password } | ConvertTo-Json
+$clinicLogin = Invoke-RestMethod -Method Post -Uri "$baseUrl/api/auth/login" -ContentType "application/json" -Body $clinicLoginBody
+$clinicToken = $clinicLogin.data.accessToken
+$clinicHeaders = @{ Authorization = "Bearer $clinicToken" }
+
+# 3. Current clinic user
+Invoke-RestMethod -Method Get -Uri "$baseUrl/api/me" -Headers $clinicHeaders
+
+# 4. Create clinic profile
+$clinicProfileBody = @{
+  clinic_name = "Happy Paws Veterinary Clinic"
+  phone_number = "02-123-4567"
+  email = "contact@happypaws.example"
+  address = "123 Pet Street, Bangkok"
+} | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "$baseUrl/api/clinic/profile" -Headers $clinicHeaders -ContentType "application/json" -Body $clinicProfileBody
+
+# 5. Get clinic profile
+Invoke-RestMethod -Method Get -Uri "$baseUrl/api/clinic/profile" -Headers $clinicHeaders
+
+# 6. Patch clinic profile
+$clinicPatchBody = @{ clinic_name = "Happy Paws Clinic Bangkok" } | ConvertTo-Json
+Invoke-RestMethod -Method Patch -Uri "$baseUrl/api/clinic/profile" -Headers $clinicHeaders -ContentType "application/json" -Body $clinicPatchBody
+
+# 7. Owner calling clinic profile: expect 403
+$ownerEmail = "owner.$suffix@example.com"
+$ownerRegisterBody = @{
+  email = $ownerEmail
+  phone = "0812345678"
+  password = $password
+  role = "owner"
+} | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri "$baseUrl/api/auth/register" -ContentType "application/json" -Body $ownerRegisterBody
+$ownerLoginBody = @{ email = $ownerEmail; password = $password } | ConvertTo-Json
+$ownerLogin = Invoke-RestMethod -Method Post -Uri "$baseUrl/api/auth/login" -ContentType "application/json" -Body $ownerLoginBody
+try {
+  Invoke-RestMethod -Method Get -Uri "$baseUrl/api/clinic/profile" -Headers @{ Authorization = "Bearer $($ownerLogin.data.accessToken)" }
+} catch {
+  $_.Exception.Response.StatusCode.value__ # Expected: 403
+}
+```
 
 ## Current status
 

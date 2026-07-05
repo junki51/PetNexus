@@ -8,14 +8,14 @@ import (
 )
 
 func TestUserRoleEnumMatchesAuthRoles(t *testing.T) {
-	for _, role := range []string{models.RoleOwner, models.RoleClinicStaff, models.RoleAdmin} {
+	for _, role := range []string{models.RoleOwner, models.RoleClinic, models.RoleClinicStaff, models.RoleAdmin} {
 		if !strings.Contains(allMigrationSQL(), "'"+role+"'") {
 			t.Fatalf("user_role enum SQL does not include %q", role)
 		}
 	}
 }
 
-func TestUserRoleEnumIncludesClinicAlias(t *testing.T) {
+func TestUserRoleEnumIncludesCanonicalClinicRole(t *testing.T) {
 	if !strings.Contains(allMigrationSQL(), "'clinic'") {
 		t.Fatal("user_role enum SQL should include clinic for Render/local compatibility")
 	}
