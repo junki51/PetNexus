@@ -59,33 +59,34 @@ class AppButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final effectiveForegroundColor = foregroundColor ?? Colors.white;
     final isSecondary = backgroundColor == AppColors.surface;
+    final buttonHeight = height ?? context.nh(56);
+    final buttonRadius = buttonHeight / 2;
 
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(context.radius(18)),
-        boxShadow: isSecondary
-            ? [
-                BoxShadow(
-                  color: AppColors.shadow.withValues(alpha: 0.12), // เงานุ่ม ๆ จาง ๆ เข้ากับพื้นหลังขาว
-                  blurRadius: context.nw(16),  // ความฟุ้งของเงา
-                  spreadRadius: context.nw(1), // ระยะกระจายเงา
-                  offset: Offset(0, context.nh(6)), // ดันเงาลงมาด้านล่างให้ปุ่มดูลอยขึ้น
-                ),
-              ]
-            : null, // ปุ่ม Primary จะไม่มีเงาซ้อนตรงนี้ เพราะใช้ elevation ของปุ่มเอง
+        borderRadius: BorderRadius.circular(buttonRadius),
+        boxShadow: [
+          BoxShadow(
+            color: isSecondary
+                ? AppColors.shadow.withValues(alpha: 0.12)
+                : AppColors.primary.withValues(alpha: 0.25),
+            blurRadius: context.nw(16),
+            spreadRadius: context.nw(1),
+            offset: Offset(0, context.nh(6)),
+          ),
+        ],
       ),
       child: SizedBox(
         width: width ?? double.infinity,
-        height: height ?? context.nh(56),
+        height: buttonHeight,
         child: ElevatedButton(
           onPressed: loading ? null : onPressed,
           style: ElevatedButton.styleFrom(
-            elevation: 3,
-            shadowColor: AppColors.shadow,
+            elevation: 0,
             backgroundColor: backgroundColor ?? AppColors.primary,
             foregroundColor: effectiveForegroundColor, 
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(context.radius(18)),
+              borderRadius: BorderRadius.circular(buttonRadius),
             ),
           ),
           child: loading
@@ -109,7 +110,9 @@ class AppButton extends StatelessWidget {
                         text,
                         style: AppTextStyles.button(
                           context,
-                        ).copyWith(color: effectiveForegroundColor, fontSize: context.nf(20)
+                        ).copyWith(
+                          color: effectiveForegroundColor, 
+                          fontSize: context.nf(20),
                         ),
                         textAlign: TextAlign.center,
                       ),

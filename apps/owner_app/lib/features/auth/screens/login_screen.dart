@@ -1,5 +1,5 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:owner_app/features/auth/controllers/auth_controller.dart';
 import 'package:owner_app/shared/widgets/app_button.dart';
 import 'package:owner_app/shared/widgets/app_social_button.dart';
@@ -21,10 +21,10 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  static const double _fieldSpacing = 16;
-  static const double _forgotSpacing = 6;
-  static const double _sectionSpacing = 28;
-  static const double _socialSpacing = 55;
+  static const double _fieldSpacing = 24;
+  static const double _forgotSpacing = 12;
+  static const double _sectionSpacing = 43;
+  static const double _socialSpacing = 64;
 
   @override
   void dispose() {
@@ -58,6 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
           onToggleVisibility: controller.togglePasswordVisibility,
           textInputAction: TextInputAction.done,
         ),
+        AppSpacing.h(context, _fieldSpacing),
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(
@@ -84,7 +85,7 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 AppSocialButton(
-                  icon: FontAwesomeIcons.google,
+                  icon: CupertinoIcons.globe,
                   color: AppColors.google,
                   onTap: () => _showComingSoon(context),
                 ),

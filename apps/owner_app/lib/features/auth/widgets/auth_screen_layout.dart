@@ -1,5 +1,5 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../../../core/constants.dart';
 import '../../../layout/responsive_layout.dart';
@@ -191,19 +191,19 @@ class AuthSocialLoginRow extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         AppSocialButton(
-          icon: FontAwesomeIcons.google,
+          icon: CupertinoIcons.globe,
           color: AppColors.google,
           onTap: onGoogleTap,
         ),
         AppSpacing.w(context, _spacing),
         AppSocialButton(
-          icon: FontAwesomeIcons.apple,
+          icon: Icons.apple,
           color: AppColors.apple,
           onTap: onAppleTap,
         ),
         AppSpacing.w(context, _spacing),
         AppSocialButton(
-          icon: FontAwesomeIcons.facebook,
+          icon: Icons.facebook,
           color: AppColors.facebook,
           onTap: onFacebookTap,
         ),

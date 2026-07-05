@@ -22,8 +22,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
 
-  static const double _fieldSpacing = 14;
-  static const double _buttonSpacing = 18;
+  static const double _fieldSpacing = 22;
+  static const double _buttonSpacing = 28;
   static const double _termsTopPadding = 2;
 
   @override
@@ -70,13 +70,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
           onToggleVisibility: controller.toggleConfirmPasswordVisibility,
           textInputAction: TextInputAction.done,
         ),
+        AppSpacing.h(context, _fieldSpacing),
         Align(
           alignment: Alignment.centerRight,
           child: TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('มีบัญชีอยู่แล้ว?'),
+            child: Text(
+              'มีบัญชีอยู่แล้ว?',
+              style: AppTextStyles.caption(context).copyWith(
+                color: AppColors.primary,
+              ),
+            ),
           ),
         ),
+        AppSpacing.h(context, _fieldSpacing),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -94,9 +101,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
             Expanded(
               child: Padding(
                 padding: EdgeInsets.only(top: context.nh(_termsTopPadding)),
-                child: Text(
-                  'ฉันยอมรับเงื่อนไขในการใช้งานและนโยบายความเป็นส่วนตัว',
-                  style: AppTextStyles.caption(context),
+                child: Text.rich(
+                  TextSpan(
+                    text: 'ฉันยอมรับ',
+                    style: AppTextStyles.caption(context),
+                    children: [
+                      TextSpan(
+                        text: 'เงื่อนไขการใช้งาน',
+                        style: AppTextStyles.caption(context).copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const TextSpan(text: ' และ'),
+                      TextSpan(
+                        text: 'นโยบายความเป็นส่วนตัว',
+                        style: AppTextStyles.caption(context).copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -104,7 +128,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         AppSpacing.h(context, _buttonSpacing),
         AppButton.primary(
-          text: 'สร้างบัญชี',
+          text: 'สร้างบัญชีใหม่',
           icon: Icons.pets,
           loading: isLoading,
           onPressed: () => _register(context, controller),

@@ -6,9 +6,9 @@ import '../../layout/responsive_layout.dart';
 class AppLogo extends StatelessWidget {
   final double _fontSize;
 
-  const AppLogo({super.key}) : _fontSize = 40;
+  const AppLogo({super.key}) : _fontSize = 48;
 
-  const AppLogo.large({super.key}) : _fontSize = 60;
+  const AppLogo.large({super.key}) : _fontSize = 72;
 
   @override
   Widget build(BuildContext context) {
