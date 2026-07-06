@@ -1,9 +1,12 @@
 package database
 
 import (
+	"errors"
 	"fmt"
 
 	"gorm.io/gorm"
+
+	"github.com/phonlakitz/petnexus-backend/internal/utils"
 )
 
 const createPGCryptoExtensionSQL = `CREATE EXTENSION IF NOT EXISTS pgcrypto;`
@@ -279,6 +282,33 @@ BEGIN
 END
 $$;`
 
+const addPetsPublicPetIDColumnSQL = `
+ALTER TABLE pets ADD COLUMN IF NOT EXISTS public_pet_id VARCHAR(50);`
+
+const normalizeEmptyPetsPublicPetIDSQL = `
+UPDATE pets SET public_pet_id = NULL
+WHERE public_pet_id IS NOT NULL AND BTRIM(public_pet_id) = '';`
+
+const createPetsPublicPetIDUniqueIndexSQL = `
+CREATE UNIQUE INDEX IF NOT EXISTS idx_pets_public_pet_id_unique
+ON pets(public_pet_id);`
+
+const ensurePetsPublicPetIDNotNullSQL = `
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_schema = current_schema()
+          AND table_name = 'pets'
+          AND column_name = 'public_pet_id'
+          AND is_nullable = 'YES'
+    ) THEN
+        ALTER TABLE pets ALTER COLUMN public_pet_id SET NOT NULL;
+    END IF;
+END
+$$;`
+
 const createClinicProfilesTableSQL = `
 CREATE TABLE IF NOT EXISTS clinic_profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -314,6 +344,7 @@ $$;`
 type migrationStep struct {
 	name string
 	sql  string
+	run  func(*gorm.DB) error
 }
 
 var migrationSteps = []migrationStep{
@@ -339,6 +370,11 @@ var migrationSteps = []migrationStep{
 	{name: "ensure pets breed foreign key", sql: ensurePetsBreedForeignKeySQL},
 	{name: "ensure pets species check", sql: ensurePetsSpeciesCheckSQL},
 	{name: "ensure pets gender check", sql: ensurePetsGenderCheckSQL},
+	{name: "ensure pets public_pet_id column", sql: addPetsPublicPetIDColumnSQL},
+	{name: "normalize empty pets public_pet_id", sql: normalizeEmptyPetsPublicPetIDSQL},
+	{name: "ensure pets public_pet_id unique index", sql: createPetsPublicPetIDUniqueIndexSQL},
+	{name: "backfill pets public_pet_id", run: backfillMissingPublicPetIDs},
+	{name: "ensure pets public_pet_id not null", sql: ensurePetsPublicPetIDNotNullSQL},
 	{name: "ensure clinic_profiles table", sql: createClinicProfilesTableSQL},
 	{name: "ensure clinic_profiles user unique index", sql: createClinicProfilesUserIDUniqueIndexSQL},
 	{name: "ensure clinic_profiles user foreign key", sql: ensureClinicProfilesUserForeignKeySQL},
@@ -349,11 +385,56 @@ var migrationSteps = []migrationStep{
 // may try to alter or drop constraints on an existing database.
 func RunMigrations(db *gorm.DB) error {
 	for _, step := range migrationSteps {
+		if step.run != nil {
+			if err := step.run(db); err != nil {
+				return fmt.Errorf("%s: %w", step.name, err)
+			}
+			continue
+		}
 		if err := db.Exec(step.sql).Error; err != nil {
 			return fmt.Errorf("%s: %w", step.name, err)
 		}
 	}
 
+	return nil
+}
+
+func backfillMissingPublicPetIDs(db *gorm.DB) error {
+	var petIDs []string
+	if err := db.Table("pets").
+		Where("public_pet_id IS NULL OR BTRIM(public_pet_id) = ''").
+		Pluck("id", &petIDs).Error; err != nil {
+		return fmt.Errorf("list pets missing public pet ID: %w", err)
+	}
+
+	for _, petID := range petIDs {
+		assigned := false
+		for attempt := 0; attempt < 20; attempt++ {
+			publicPetID, err := utils.GeneratePublicPetID()
+			if err != nil {
+				return err
+			}
+			result := db.Exec(
+				"UPDATE pets SET public_pet_id = ? WHERE id = ? AND (public_pet_id IS NULL OR BTRIM(public_pet_id) = '')",
+				publicPetID,
+				petID,
+			)
+			if result.Error != nil {
+				if errors.Is(result.Error, gorm.ErrDuplicatedKey) {
+					continue
+				}
+				return fmt.Errorf("backfill pet %s public pet ID: %w", petID, result.Error)
+			}
+			assigned = result.RowsAffected == 1
+			if result.RowsAffected == 0 {
+				assigned = true
+			}
+			break
+		}
+		if !assigned {
+			return fmt.Errorf("backfill pet %s public pet ID: exhausted unique ID attempts", petID)
+		}
+	}
 	return nil
 }
 

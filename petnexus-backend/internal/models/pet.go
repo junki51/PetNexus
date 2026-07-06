@@ -16,6 +16,7 @@ const (
 // intentionally belong to later features.
 type Pet struct {
 	ID               uuid.UUID  `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	PublicPetID      string     `gorm:"column:public_pet_id;size:50;not null;uniqueIndex:idx_pets_public_pet_id_unique"`
 	OwnerProfileID   uuid.UUID  `gorm:"type:uuid;not null;index"`
 	BreedID          *uuid.UUID `gorm:"type:uuid;index"`
 	Species          string     `gorm:"size:20;not null;index"`
@@ -30,7 +31,8 @@ type Pet struct {
 	IsNeutered       *bool
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
-	Breed            *Breed `gorm:"foreignKey:BreedID"`
+	Breed            *Breed        `gorm:"foreignKey:BreedID"`
+	OwnerProfile     *OwnerProfile `gorm:"foreignKey:OwnerProfileID"`
 }
 
 func (Pet) TableName() string {

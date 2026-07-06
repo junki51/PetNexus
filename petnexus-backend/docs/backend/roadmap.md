@@ -2,7 +2,7 @@
 
 ## Completed
 
-Sprint 1–6 are implemented and tested:
+Sprint 1–7 are implemented and tested:
 
 - Backend and health foundation
 - PostgreSQL connection and guarded startup migration
@@ -10,8 +10,9 @@ Sprint 1–6 are implemented and tested:
 - Owner Profile
 - Breed catalog and basic Pet management
 - Clinic Profile foundation
+- Pet public ID and clinic pet lookup
 
-See [Sprint 1–6 summary](../sprints/sprint-1-to-6-summary.md).
+See [Sprint 1–7 summary](../sprints/sprint-1-to-7-summary.md).
 
 ## Not implemented
 
@@ -34,15 +35,15 @@ See [Sprint 1–6 summary](../sprints/sprint-1-to-6-summary.md).
 Placeholder files for some future domains are not implemented APIs and must not
 be treated as working features.
 
-## Recommended Sprint 7 planning topic
+## Recommended Sprint 8 planning topic
 
-Sprint 7 should design **QR Sharing + Clinic Access Request**, not immediately
-implement it. The design should answer:
+Sprint 8 should design **Clinic Access Request**, with QR treated only as an
+optional transport for the public pet ID. The design should answer:
 
-1. What a QR token identifies and how long it remains valid.
-2. Whether QR is single-use, reusable, or revocable.
-3. What pet data is visible before owner authorization.
-4. How a clinic requests access after scanning.
+1. How a clinic requests access after finding a pet.
+2. What pet data is visible before and after owner authorization.
+3. Whether a QR carries only `public_pet_id` or a separate token.
+4. If a token is used, its lifetime, revocation, and replay rules.
 5. How owner approval/rejection is represented.
 6. Authorization scope, expiry, revocation, and audit trail.
 7. Replay protection and token hashing/storage.

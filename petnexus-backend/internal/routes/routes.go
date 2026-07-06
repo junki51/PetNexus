@@ -14,13 +14,14 @@ import (
 // Dependencies contains the concrete application dependencies needed by the
 // route layer.
 type Dependencies struct {
-	Config        config.Config
-	DB            *gorm.DB
-	AuthHandler   *handlers.AuthHandler
-	OwnerHandler  *handlers.OwnerProfileHandler
-	BreedHandler  *handlers.BreedHandler
-	PetHandler    *handlers.PetHandler
-	ClinicHandler *handlers.ClinicProfileHandler
+	Config              config.Config
+	DB                  *gorm.DB
+	AuthHandler         *handlers.AuthHandler
+	OwnerHandler        *handlers.OwnerProfileHandler
+	BreedHandler        *handlers.BreedHandler
+	PetHandler          *handlers.PetHandler
+	ClinicHandler       *handlers.ClinicProfileHandler
+	ClinicLookupHandler *handlers.ClinicPetLookupHandler
 }
 
 // Register attaches all currently available routes to the router.
@@ -67,6 +68,7 @@ func Register(router *gin.Engine, deps Dependencies) {
 	clinic.POST("/profile", deps.ClinicHandler.CreateClinicProfile)
 	clinic.GET("/profile", deps.ClinicHandler.GetMyClinicProfile)
 	clinic.PATCH("/profile", deps.ClinicHandler.UpdateMyClinicProfile)
+	clinic.GET("/pet-lookup", deps.ClinicLookupHandler.LookupPet)
 
 	// TODO: Register future route groups for:
 	// /api/authorizations

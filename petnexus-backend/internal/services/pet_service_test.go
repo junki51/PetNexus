@@ -3,6 +3,7 @@ package services
 import (
 	"errors"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -65,6 +66,25 @@ func (r *petRepositoryFake) FindAllByOwnerProfileID(ownerProfileID uuid.UUID) ([
 	result := make([]models.Pet, 0)
 	for _, pet := range r.pets {
 		if pet.OwnerProfileID == ownerProfileID {
+			result = append(result, *pet)
+		}
+	}
+	return result, nil
+}
+
+func (r *petRepositoryFake) FindByPublicPetID(publicPetID string) (*models.Pet, error) {
+	for _, pet := range r.pets {
+		if pet.PublicPetID == publicPetID {
+			return pet, nil
+		}
+	}
+	return nil, repositories.ErrPetNotFound
+}
+
+func (r *petRepositoryFake) FindByOwnerPhone(phone string) ([]models.Pet, error) {
+	result := make([]models.Pet, 0)
+	for _, pet := range r.pets {
+		if pet.OwnerProfile != nil && pet.OwnerProfile.PhoneNumber == phone {
 			result = append(result, *pet)
 		}
 	}
@@ -154,6 +174,9 @@ func TestPetServiceCreateUsesCurrentOwnerProfileAndMatchingBreed(t *testing.T) {
 	}
 	if response.Name != "Milo" || response.Species != models.SpeciesDog || response.Breed == nil || response.Breed.ID != breedID.String() {
 		t.Fatalf("unexpected response: %#v", response)
+	}
+	if !strings.HasPrefix(response.PublicPetID, utils.PublicPetIDPrefix) {
+		t.Fatalf("PublicPetID = %q, want generated prefix %q", response.PublicPetID, utils.PublicPetIDPrefix)
 	}
 }
 

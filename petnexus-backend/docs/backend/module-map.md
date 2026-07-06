@@ -46,7 +46,8 @@
 - **Access:** Owner only.
 - **Rules:** Owner profile is resolved from JWT; owners see only their pets;
   supplied breed must exist and match species; PATCH changes supplied fields
-  only.
+  only; every pet has a backend-generated unique public ID in
+  `PNX-PET-XXXXXX` format.
 
 ## Clinic Profile module
 
@@ -57,10 +58,22 @@
 - **Rules:** One user has one clinic profile; user ID comes from JWT; owner is
   forbidden; duplicate create returns conflict.
 
+## Clinic Pet Lookup module
+
+- **Purpose:** Let an authenticated clinic find limited pet identity before any
+  future authorization workflow exists.
+- **Main tables:** `pets`, `owner_profiles`, and optional `breeds` relation.
+- **Endpoint:** `GET /api/clinic/pet-lookup` with exactly one of `pet_id` or
+  `owner_phone`.
+- **Access:** Canonical `clinic` role and legacy-compatible `clinic_staff`.
+- **Rules:** Public pet ID lookup returns one pet or 404. Exact owner phone
+  lookup returns an empty `items` array when there are no matches. Owner phone is
+  masked and private owner/pet fields are excluded.
+
 ## Shared infrastructure
 
 - JWT authentication middleware injects user ID and role into Gin context.
 - Role middleware checks route allow-lists.
 - Response helper enforces one JSON envelope.
 - Typed application errors keep internal causes out of responses.
-- Startup SQL creates only currently implemented Sprint 1–6 schema.
+- Startup SQL creates only currently implemented Sprint 1–7 schema.

@@ -17,7 +17,7 @@ PostgreSQL and organized around owner-controlled pet identity.
 
 ## Completed backend scope
 
-Sprint 1–6 currently supports:
+Sprint 1–7 currently supports:
 
 - application health check
 - PostgreSQL health check
@@ -29,6 +29,8 @@ Sprint 1–6 currently supports:
 - clinic profile create/get/partial update
 - public dog/cat breed list and species filtering
 - owner pet create/list/detail/partial update
+- backend-generated permanent public pet IDs
+- clinic pet lookup by public pet ID or exact owner phone
 - database startup migration using guarded, idempotent SQL
 
 ## Supported owner flow
@@ -50,6 +52,7 @@ choose `user_id` or `owner_profile_id`.
 Register/login as clinic
 → Create clinic profile
 → Fetch/update clinic profile settings
+→ Look up limited pet identity by public pet ID or exact owner phone
 ```
 
 `clinic` is the canonical Clinic Web Dashboard role. Legacy `clinic_staff`
@@ -58,7 +61,7 @@ resolved from the JWT user ID.
 
 ## Not implemented yet
 
-- QR sharing and QR scanning
+- QR sharing and QR scanning (a future QR may carry the public pet ID)
 - clinic access requests
 - owner approval/rejection
 - authorized clinic/patient relationships

@@ -176,6 +176,11 @@ $pet = Invoke-RestMethod -Method POST `
   -Body $petBody
 
 $petId = $pet.data.id
+$publicPetId = $pet.data.public_pet_id
+
+if ($publicPetId -notmatch '^PNX-PET-[A-Z0-9]{6}$') {
+  throw "Unexpected public pet ID: $publicPetId"
+}
 ```
 
 ### List my pets
@@ -287,6 +292,30 @@ Invoke-RestMethod -Method PATCH `
   -Body $clinicPatchBody
 ```
 
+### Clinic lookup by public pet ID
+
+```powershell
+$lookupById = Invoke-RestMethod -Method GET `
+  -Uri "$baseUrl/api/clinic/pet-lookup?pet_id=$publicPetId" `
+  -Headers $clinicHeaders
+
+$lookupById.data.public_pet_id
+```
+
+### Clinic lookup by exact owner phone
+
+```powershell
+$lookupByPhone = Invoke-RestMethod -Method GET `
+  -Uri "$baseUrl/api/clinic/pet-lookup?owner_phone=0812345678" `
+  -Headers $clinicHeaders
+
+$lookupByPhone.data.items
+```
+
+Expected: the public ID lookup returns the created pet, and exact phone lookup
+contains it. Owner phone is masked. Private owner address and private pet fields
+are absent.
+
 ## Negative tests
 
 ### No token returns 401
@@ -306,6 +335,41 @@ try {
   Invoke-RestMethod -Method GET "$baseUrl/api/clinic/profile" -Headers $ownerHeaders
 } catch {
   $_.Exception.Response.StatusCode.value__ # 403
+}
+```
+
+### Clinic pet lookup authorization and validation
+
+```powershell
+try {
+  Invoke-RestMethod -Method GET `
+    -Uri "$baseUrl/api/clinic/pet-lookup?pet_id=$publicPetId"
+} catch {
+  $_.Exception.Response.StatusCode.value__ # 401
+}
+
+try {
+  Invoke-RestMethod -Method GET `
+    -Uri "$baseUrl/api/clinic/pet-lookup?pet_id=$publicPetId" `
+    -Headers $ownerHeaders
+} catch {
+  $_.Exception.Response.StatusCode.value__ # 403
+}
+
+try {
+  Invoke-RestMethod -Method GET `
+    -Uri "$baseUrl/api/clinic/pet-lookup" `
+    -Headers $clinicHeaders
+} catch {
+  $_.Exception.Response.StatusCode.value__ # 400
+}
+
+try {
+  Invoke-RestMethod -Method GET `
+    -Uri "$baseUrl/api/clinic/pet-lookup?pet_id=PNX-PET-ZZZZZZ" `
+    -Headers $clinicHeaders
+} catch {
+  $_.Exception.Response.StatusCode.value__ # 404
 }
 ```
 
@@ -355,6 +419,6 @@ After deployment:
 
 1. Check `/health` and `/health/db`.
 2. Repeat owner and clinic registration/login with unique emails.
-3. Repeat profile and pet flows.
+3. Repeat profile, pet, and clinic pet lookup flows.
 4. Verify wrong-role responses.
 5. Inspect Render logs for migration errors without exposing secrets.

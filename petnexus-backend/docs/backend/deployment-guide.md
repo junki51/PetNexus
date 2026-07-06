@@ -70,6 +70,7 @@ Startup safely ensures:
 - `owner_profiles`
 - `breeds` and seed data
 - `pets`
+- unique public pet IDs and backfill for existing pets
 - `clinic_profiles`
 - required indexes, checks, and foreign keys
 

@@ -4,7 +4,7 @@ PetNexus is a digital pet passport and owner-controlled pet identity platform. T
 
 ## Stack
 
-Sprint 6 uses Go, Gin, godotenv, PostgreSQL, GORM, Docker Compose, bcrypt, and JWT access tokens. Safe SQL migrations run automatically at startup; the versioned SQL files can also be applied manually with `psql`.
+Sprint 7 uses Go, Gin, godotenv, PostgreSQL, GORM, Docker Compose, bcrypt, and JWT access tokens. Safe SQL migrations run automatically at startup; the versioned SQL files can also be applied manually with `psql`.
 
 ## Architecture
 
@@ -99,11 +99,13 @@ Get-Content .\migrations\002_create_users.sql | docker exec -i petnexus-postgres
 Get-Content .\migrations\003_create_owner_profiles.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
 Get-Content .\migrations\004_create_breeds_and_pets.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
 Get-Content .\migrations\005_create_clinic_profiles.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
+Get-Content .\migrations\006_add_public_pet_id.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
 ```
 
 If Docker shows a different container name, replace `petnexus-postgres` in the
 commands. These migrations create the currently implemented auth, owner
-profile, breed catalog, basic pet profile, and clinic profile schema only.
+profile, breed catalog, basic pet profile, clinic profile, and public pet ID
+schema only.
 
 ## Run the backend
 
@@ -726,11 +728,121 @@ try {
 }
 ```
 
+## Sprint 7: Pet Public ID + Clinic Pet Lookup
+
+Sprint 7 makes Clinic Pet Lookup the core discovery flow. QR is not implemented;
+a future QR code may simply resolve to a `public_pet_id` or lookup value.
+
+Every pet now has a backend-generated identifier:
+
+```text
+PNX-PET-XXXXXX
+```
+
+The client does not send this field. New pets receive it during creation and
+startup migration backfills existing pets before enforcing a unique, non-null
+database constraint. Pet owner responses now include `public_pet_id`.
+
+Clinic lookup endpoint:
+
+```text
+GET /api/clinic/pet-lookup?pet_id=PNX-PET-8F3K2A
+GET /api/clinic/pet-lookup?owner_phone=0812345678
+```
+
+Rules:
+
+- JWT and clinic-side role are required.
+- Owner receives 403; no token receives 401.
+- Exactly one query is required; both or neither returns 400.
+- `pet_id` lookup returns one limited pet or 404.
+- Owner-phone lookup is exact match only and returns `{ "items": [] }` when no
+  pets match.
+- Owner phone is masked and no user/profile IDs or private pet fields are
+  returned.
+
+Example `pet_id` lookup data:
+
+```json
+{
+  "id": "pet-uuid",
+  "public_pet_id": "PNX-PET-8F3K2A",
+  "name": "Milo",
+  "species": "dog",
+  "breed": {
+    "id": "breed-uuid",
+    "species": "dog",
+    "name": "Golden Retriever",
+    "name_th": null
+  },
+  "gender": "male",
+  "date_of_birth": "2022-05-10",
+  "avatar_url": "https://example.com/milo.png",
+  "owner": {
+    "display_name": "Sunny Example",
+    "masked_phone": "081****678"
+  }
+}
+```
+
+### Sprint 7 PowerShell smoke flow
+
+The detailed end-to-end script is in
+[`docs/backend/testing-guide.md`](docs/backend/testing-guide.md). Core lookup
+checks:
+
+```powershell
+$baseUrl = "http://localhost:8080"
+
+# After registering/logging in owner, creating owner profile and creating pet:
+$publicPetId = $pet.data.public_pet_id
+
+# After registering/logging in clinic:
+$clinicHeaders = @{ Authorization = "Bearer $clinicToken" }
+
+# Lookup by public ID
+Invoke-RestMethod -Method Get `
+  -Uri "$baseUrl/api/clinic/pet-lookup?pet_id=$publicPetId" `
+  -Headers $clinicHeaders
+
+# Exact owner-phone lookup
+Invoke-RestMethod -Method Get `
+  -Uri "$baseUrl/api/clinic/pet-lookup?owner_phone=0812345678" `
+  -Headers $clinicHeaders
+
+# Missing query: expect 400
+try {
+  Invoke-RestMethod -Method Get -Uri "$baseUrl/api/clinic/pet-lookup" -Headers $clinicHeaders
+} catch { $_.Exception.Response.StatusCode.value__ }
+
+# Unknown public ID: expect 404
+try {
+  Invoke-RestMethod -Method Get `
+    -Uri "$baseUrl/api/clinic/pet-lookup?pet_id=PNX-PET-ZZZZZZ" `
+    -Headers $clinicHeaders
+} catch { $_.Exception.Response.StatusCode.value__ }
+
+# No token: expect 401
+try {
+  Invoke-RestMethod -Method Get -Uri "$baseUrl/api/clinic/pet-lookup?pet_id=$publicPetId"
+} catch { $_.Exception.Response.StatusCode.value__ }
+
+# Owner token: expect 403
+try {
+  Invoke-RestMethod -Method Get `
+    -Uri "$baseUrl/api/clinic/pet-lookup?pet_id=$publicPetId" `
+    -Headers $ownerHeaders
+} catch { $_.Exception.Response.StatusCode.value__ }
+```
+
+Not included: QR tokens, access requests, owner approval, appointments,
+medical records, timeline, reports, notifications, or frontend code.
+
 ## Current status
 
-Sprint 6 adds the `clinic_profiles` schema and clinic-staff-only create/get/PATCH
-profile APIs. Sprint 1–5 health, auth, owner profile, breed, and pet endpoints
-remain unchanged.
+Sprint 7 adds unique backend-generated public pet IDs, safe existing-pet
+backfill, and privacy-limited clinic lookup by public ID or exact owner phone.
+Sprint 1–6 endpoints remain available.
 
 Pet Passport, QR sharing, clinic access requests, authorization decisions, visits, timelines, notifications, real file uploads, Flutter UI, and clinic web UI are deliberately not implemented in this sprint.
 
@@ -738,6 +850,6 @@ Pet Passport, QR sharing, clinic access requests, authorization decisions, visit
 
 ## Recommended next step
 
-Deploy/redeploy to Render and repeat the Sprint 6 clinic profile smoke flow.
-Plan QR, clinic access, visits, or staff management only as separate,
-explicitly scoped sprints.
+Deploy/redeploy to Render and repeat the Sprint 7 migration and lookup smoke
+flow. Design clinic access authorization separately; QR should remain an
+optional shortcut that resolves to a lookup value rather than the core flow.

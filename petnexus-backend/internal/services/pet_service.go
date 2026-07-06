@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"net/http"
 	"net/url"
@@ -23,6 +24,8 @@ var allowedPetGenders = map[string]struct{}{
 	models.PetGenderFemale:  {},
 	models.PetGenderUnknown: {},
 }
+
+const maxPublicPetIDGenerationAttempts = 20
 
 // PetService owns pet validation, ownership, and breed consistency rules.
 type PetService interface {
@@ -111,12 +114,30 @@ func (s *petService) CreatePet(currentUserID string, req dto.CreatePetRequest) (
 		IsNeutered:       req.IsNeutered,
 		Breed:            breed,
 	}
-	if err := s.petRepo.Create(pet); err != nil {
+	if err := s.createPetWithPublicID(pet); err != nil {
 		return nil, internalServerError(err)
 	}
 
 	response := toPetResponse(pet, time.Now())
 	return &response, nil
+}
+
+func (s *petService) createPetWithPublicID(pet *models.Pet) error {
+	for attempt := 0; attempt < maxPublicPetIDGenerationAttempts; attempt++ {
+		publicPetID, err := utils.GeneratePublicPetID()
+		if err != nil {
+			return err
+		}
+		pet.PublicPetID = publicPetID
+		if err := s.petRepo.Create(pet); err != nil {
+			if errors.Is(err, repositories.ErrPublicPetIDAlreadyExists) {
+				continue
+			}
+			return err
+		}
+		return nil
+	}
+	return fmt.Errorf("generate unique public pet ID: exhausted %d attempts", maxPublicPetIDGenerationAttempts)
 }
 
 func (s *petService) ListMyPets(currentUserID string) ([]dto.PetResponse, error) {
@@ -434,6 +455,7 @@ func toPetResponse(pet *models.Pet, now time.Time) dto.PetResponse {
 
 	return dto.PetResponse{
 		ID:               pet.ID.String(),
+		PublicPetID:      pet.PublicPetID,
 		Species:          pet.Species,
 		Name:             pet.Name,
 		Gender:           pet.Gender,

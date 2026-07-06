@@ -72,6 +72,7 @@ while other current DTOs use snake_case timestamps.
 ```json
 {
   "id": "pet-uuid",
+  "public_pet_id": "PNX-PET-A1B2C3",
   "species": "dog",
   "name": "Milo",
   "gender": "male",
@@ -295,7 +296,8 @@ All Pet routes require JWT, role `owner`, and an existing owner profile.
   `BREED_SPECIES_MISMATCH`; 401; 403; 404 `OWNER_PROFILE_REQUIRED` or
   `BREED_NOT_FOUND`; 500.
 - **Backend notes:** `user_id` and `owner_profile_id` are not accepted. Breed is
-  optional but must match species when supplied.
+  optional but must match species when supplied. `public_pet_id` is generated
+  by the backend and cannot be supplied by the client.
 
 ### `GET /api/pets`
 
@@ -380,3 +382,50 @@ All Clinic Profile routes require JWT and a clinic-side role: canonical
 - **Common errors:** 400 malformed/empty/invalid body, 401, 403, 404, 500.
 - **Backend notes:** Optional phone/email/address can be cleared with empty
   string; unspecified fields remain unchanged.
+
+## Clinic Pet Lookup
+
+Clinic Pet Lookup requires JWT and a clinic-side role: canonical `clinic`, with
+`clinic_staff` retained for compatibility. It does not create clinic access or
+authorization.
+
+### `GET /api/clinic/pet-lookup?pet_id=PNX-PET-A1B2C3`
+
+- **Purpose:** Find one pet by its backend-generated public pet ID.
+- **Success:** 200; `data` is one limited pet lookup object.
+- **Common errors:** 400 `VALIDATION_ERROR`, 401, 403, 404 `PET_NOT_FOUND`, 500.
+- **Backend notes:** Public ID input is normalized to uppercase.
+
+### `GET /api/clinic/pet-lookup?owner_phone=0812345678`
+
+- **Purpose:** Find pets whose owner profile phone exactly matches the query.
+- **Success:** 200; `data` is `{ "items": [...] }`; no matches return
+  `{ "items": [] }`.
+- **Common errors:** 400 `VALIDATION_ERROR`, 401, 403, 500.
+- **Backend notes:** Partial phone matching is not supported. Supply exactly one
+  of `pet_id` and `owner_phone`; supplying neither or both returns 400.
+
+Limited lookup item:
+
+    {
+      "id": "pet-uuid",
+      "public_pet_id": "PNX-PET-A1B2C3",
+      "name": "Milo",
+      "species": "dog",
+      "breed": {
+        "id": "breed-uuid",
+        "species": "dog",
+        "name": "Golden Retriever",
+        "name_th": null
+      },
+      "gender": "male",
+      "date_of_birth": "2022-05-10",
+      "avatar_url": null,
+      "owner": {
+        "display_name": "Sunny Example",
+        "masked_phone": "081****678"
+      }
+    }
+
+The response deliberately excludes owner address, email/user ID, pet
+microchip, weight, distinctive marks, and all medical data.

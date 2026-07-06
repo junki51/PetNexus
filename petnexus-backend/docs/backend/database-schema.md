@@ -2,7 +2,7 @@
 
 PostgreSQL schema is created by guarded startup SQL in
 `internal/database/migrate.go`. Manual equivalents are numbered in
-`migrations/001` through `005`. GORM AutoMigrate is intentionally not used for
+`migrations/001` through `006`. GORM AutoMigrate is intentionally not used for
 existing tables.
 
 ## Relationship overview
@@ -105,6 +105,7 @@ not stored here.
 | Field | Type/rule |
 | --- | --- |
 | `id` | UUID primary key |
+| `public_pet_id` | varchar(50), required; backend-generated public identifier |
 | `owner_profile_id` | UUID, required |
 | `breed_id` | UUID, nullable |
 | `species` | varchar(20), required |
@@ -122,6 +123,7 @@ not stored here.
 Constraints/indexes:
 
 - index `idx_pets_owner_profile_id`
+- unique index `idx_pets_public_pet_id_unique`
 - index `idx_pets_breed_id`
 - index `idx_pets_species`
 - guarded foreign key `owner_profile_id → owner_profiles(id)`
@@ -131,6 +133,11 @@ Constraints/indexes:
 
 `microchip_id` is not unique yet because collision and ownership policy has not
 been finalized.
+
+`public_pet_id` uses the format `PNX-PET-XXXXXX`, where the suffix is six
+uppercase alphanumeric characters. The backend generates it and retries on a
+database uniqueness collision. Startup migration 006 safely backfills existing
+pets before enforcing `NOT NULL`.
 
 ## Ownership resolution
 

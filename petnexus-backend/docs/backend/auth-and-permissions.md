@@ -61,9 +61,15 @@ Clinic roles receive 403 `FORBIDDEN_ROLE` on these routes.
 - `POST /api/clinic/profile`
 - `GET /api/clinic/profile`
 - `PATCH /api/clinic/profile`
+- `GET /api/clinic/pet-lookup?pet_id=PNX-PET-XXXXXX`
+- `GET /api/clinic/pet-lookup?owner_phone=<exact-phone>`
 
 Allowed roles are canonical `clinic` and legacy-compatible `clinic_staff`.
 Owner receives 403 `FORBIDDEN_ROLE`.
+
+Clinic pet lookup accepts exactly one query parameter. It exposes only limited
+pet identity, breed data, owner display name, and a masked phone number. It does
+not grant clinic access to the pet or expose medical/private owner data.
 
 ## Identity and ownership rules
 

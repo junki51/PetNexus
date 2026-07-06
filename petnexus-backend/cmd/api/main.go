@@ -37,21 +37,24 @@ func main() {
 	breedService := services.NewBreedService(breedRepo)
 	petService := services.NewPetService(petRepo, breedRepo, ownerProfileRepo)
 	clinicProfileService := services.NewClinicProfileService(clinicProfileRepo)
+	clinicPetLookupService := services.NewClinicPetLookupService(petRepo)
 	authHandler := handlers.NewAuthHandler(authService)
 	ownerProfileHandler := handlers.NewOwnerProfileHandler(ownerProfileService)
 	breedHandler := handlers.NewBreedHandler(breedService)
 	petHandler := handlers.NewPetHandler(petService)
 	clinicProfileHandler := handlers.NewClinicProfileHandler(clinicProfileService)
+	clinicPetLookupHandler := handlers.NewClinicPetLookupHandler(clinicPetLookupService)
 
 	router := gin.Default()
 	routes.Register(router, routes.Dependencies{
-		Config:        cfg,
-		DB:            db,
-		AuthHandler:   authHandler,
-		OwnerHandler:  ownerProfileHandler,
-		BreedHandler:  breedHandler,
-		PetHandler:    petHandler,
-		ClinicHandler: clinicProfileHandler,
+		Config:              cfg,
+		DB:                  db,
+		AuthHandler:         authHandler,
+		OwnerHandler:        ownerProfileHandler,
+		BreedHandler:        breedHandler,
+		PetHandler:          petHandler,
+		ClinicHandler:       clinicProfileHandler,
+		ClinicLookupHandler: clinicPetLookupHandler,
 	})
 
 	log.Printf("PetNexus backend listening on http://localhost:%s", cfg.Port)

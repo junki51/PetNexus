@@ -146,6 +146,30 @@ func TestPetsMigrationMatchesModelAndUsesGuardedConstraints(t *testing.T) {
 	}
 }
 
+func TestPetsPublicPetIDMigrationIsSafeAndIdempotent(t *testing.T) {
+	for _, fragment := range []string{
+		"ALTER TABLE pets ADD COLUMN IF NOT EXISTS public_pet_id VARCHAR(50)",
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_pets_public_pet_id_unique",
+		"ON pets(public_pet_id)",
+		"ALTER TABLE pets ALTER COLUMN public_pet_id SET NOT NULL",
+	} {
+		if !strings.Contains(allMigrationSQL(), fragment) {
+			t.Fatalf("public pet ID migration SQL does not include %q", fragment)
+		}
+	}
+
+	foundBackfill := false
+	for _, step := range migrationSteps {
+		if step.name == "backfill pets public_pet_id" && step.run != nil {
+			foundBackfill = true
+			break
+		}
+	}
+	if !foundBackfill {
+		t.Fatal("startup migration must include application-level public pet ID backfill")
+	}
+}
+
 func TestClinicProfilesMigrationMatchesModelAndUsesGuardedConstraints(t *testing.T) {
 	for _, fragment := range []string{
 		"CREATE TABLE IF NOT EXISTS clinic_profiles",
