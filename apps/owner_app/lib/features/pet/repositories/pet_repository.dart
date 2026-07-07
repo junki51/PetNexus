@@ -90,4 +90,35 @@ class PetRepository {
       throw Exception(e.response?.data["message"] ?? "Failed to register pet");
     }
   }
+
+  Future<List<PetModel>> listMyPets() async {
+    try {
+      final response = await ApiClient.instance.dio.get("/pets");
+      final list = response.data['data'] as List<dynamic>;
+      return list.map((item) => PetModel.fromJson(item as Map<String, dynamic>)).toList();
+    } on DioException catch (_) {
+      return []; // Empty list on error — no crash
+    }
+  }
+
+  Future<PetModel> getMyPet(String id) async {
+    try {
+      final response = await ApiClient.instance.dio.get("/pets/$id");
+      final data = response.data['data'] as Map<String, dynamic>;
+      return PetModel.fromJson(data);
+    } on DioException catch (e) {
+      throw Exception(e.response?.data["message"] ?? "Failed to load pet");
+    }
+  }
+
+  Future<PetModel> updateMyPet(String id, Map<String, dynamic> updates) async {
+    try {
+      final response =
+          await ApiClient.instance.dio.patch("/pets/$id", data: updates);
+      final data = response.data['data'] as Map<String, dynamic>;
+      return PetModel.fromJson(data);
+    } on DioException catch (e) {
+      throw Exception(e.response?.data["message"] ?? "Failed to update pet");
+    }
+  }
 }

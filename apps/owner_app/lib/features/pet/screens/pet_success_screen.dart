@@ -15,7 +15,7 @@ class PetSuccessScreen extends StatelessWidget {
   final String _peekingDogUrl = 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?w=200';
 
   void _onContinue(BuildContext context) {
-    Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (route) => false);
+    Navigator.pushNamedAndRemoveUntil(context, AppRoutes.main, (route) => false);
   }
 
   @override

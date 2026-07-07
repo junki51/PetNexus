@@ -1,0 +1,44 @@
+# รายการงาน (Tasks) - Pet Registration & Bottom Nav Shell (4 Tabs + Real Backend Integration)
+
+- [x] จัดเตรียมภาพประกอบสำหรับสุนัขและแมว (Assets Generation)
+  - [x] ออกแบบโครงสร้างให้รองรับ URL หรือ Local Asset ที่สามารถใส่ลิงก์ static ทีหลังได้ตามคำขอผู้ใช้
+- [x] ตั้งค่าเส้นทางและตัวจัดการสถานะ (Config & Controller)
+  - [x] เพิ่มเส้นทางใหม่ใน `lib/app/app_routes.dart`
+  - [x] สร้าง `lib/features/pet/models/pet_model.dart`
+  - [x] สร้าง `lib/features/pet/models/breed_model.dart`
+  - [x] สร้าง `lib/features/pet/repositories/pet_repository.dart`
+  - [x] สร้าง `lib/features/pet/controllers/pet_controller.dart`
+- [x] พัฒนาชุด Widgets และหน้าจอ (UI & Screens)
+  - [x] พัฒนาแถบขั้นตอน `lib/features/pet/widgets/step_tracker.dart`
+  - [x] สร้างหน้าจอเลือกประเภท `lib/features/pet/screens/select_pet_screen.dart`
+  - [x] สร้างหน้าจอเขียนข้อมูล `lib/features/pet/screens/pet_info_form_screen.dart`
+  - [x] สร้างหน้าจออัปโหลดภาพ `lib/features/pet/screens/pet_upload_photo_screen.dart`
+  - [x] สร้างหน้าจอสำเร็จรูป `lib/features/pet/screens/pet_success_screen.dart` ตาม mockup ล่าสุด
+- [x] ลงทะเบียนโมดูลในระบบหลัก (Integration)
+  - [x] แก้ไข `lib/main.dart` เพิ่ม `PetController` และเส้นทางทั้ง 4 เส้นทาง
+  - [x] นำทางจากหน้าอัปโหลดรูปภาพสัตว์เลี้ยงไปยังหน้า `AppRoutes.petSuccess` แทนหน้าหลักตรงๆ
+- [x] เชื่อมโยงระบบเข้ากับฐานข้อมูล/API จริงของ Backend (Real Backend Integration)
+  - [x] ศึกษาและแมปพอร์ตและกลุ่มพาธใหม่ให้เข้ากับ Go Backend (แก้ `ApiConfig.baseUrl` เป็น `/api` และแก้ `/auth/me` เป็น `/me`)
+  - [x] พัฒนาระบบโหลดสายพันธุ์สัตว์เลี้ยงแบบไดนามิกจากหลังบ้าน `/breeds?species=...` แทนข้อมูล Hardcoded เดิม
+  - [x] แมปฟอร์มส่งออกข้อมูลด้วย `breed_id` (UUID ของสายพันธุ์) ไปยัง API `POST /pets` จริงของเซิร์ฟเวอร์
+- [x] ออกแบบและพัฒนาระบบหน้าหลัก 4 แท็บ (Bottom Navigation Shell & Mini-Game)
+  - [x] ออกแบบโครงสร้างและสร้าง `lib/app/main_shell.dart` (IndexedStack + Bottom nav)
+  - [x] พัฒนา `HomeScreen` (Tamagotchi-style)
+    - [x] ใส่ bounce และ tap-shake animation บนตัวอวตารสัตว์เลี้ยง
+    - [x] พัฒนา Status indicator bars (อาหาร สุขภาพ ความรัก อาบน้ำ)
+    - [x] พัฒนาแถบ 7-day calendar strip และแสดงกิจกรรมย่อยของวันที่เลือก
+  - [x] พัฒนา `PetIdScreen` (Digital ID Card)
+    - [x] แสดงภาพ อายุกรองคำนวณ ชื่อเล่น สายพันธุ์
+    - [x] แสดง Health Status & Vaccination badges
+    - [x] สร้างและแสดงผล QR Code จาก pet.id จริงแบบ Dynamic ด้วย `qr_flutter`
+    - [x] ปุ่มควบคุมแถบล่าง (แก้ไข เพิ่ม ทั้งหมด แชร์)
+  - [x] พัฒนา `CalendarScreen` (ตารางปฏิทินรายเดือน)
+    - [x] แสดง month grid พร้อมเลือกวันและนำทางย้อนกลับ/ไปข้างหน้าตามเดือน/ปีไทย
+    - [x] จุดบอกวันที่มีกิจกรรม (Activity dot indicators)
+    - [x] แสดงรายละเอียดของงาน (ไปตามนัดหมอ, รับยาเห็บหมัด)
+  - [x] พัฒนา `SettingsScreen` (หน้าตั้งค่าระบบ)
+    - [x] แสดง profile เจ้าของสัตว์เลี้ยงเชื่อมข้อมูล auth.currentUser
+    - [x] แสดง Sharing, Privacy และการสำรองข้อมูล (Mock stubs)
+    - [x] เชื่อมปุ่ม "ออกจากระบบ" (Logout)
+- [x] ตรวจสอบความถูกต้องและทดสอบคุณภาพโค้ด (Verification)
+  - [x] รัน `flutter analyze` เพื่อตรวจสอบหาจุด Error

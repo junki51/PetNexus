@@ -33,6 +33,13 @@ class PetController extends ChangeNotifier {
   BreedModel? _selectedBreed;
   BreedModel? get selectedBreed => _selectedBreed;
 
+  // My pets list fetched from backend
+  List<PetModel> _myPets = [];
+  List<PetModel> get myPets => _myPets;
+
+  PetModel? _selectedPet;
+  PetModel? get selectedPet => _selectedPet;
+
   // Form temporary fields
   String _name = '';
   String? _gender;
@@ -63,6 +70,18 @@ class PetController extends ChangeNotifier {
   Future<void> fetchBreeds(String species) async {
     _breeds = await _repository.getBreeds(species);
     notifyListeners();
+  }
+
+  Future<void> fetchMyPets() async {
+    _myPets = await _repository.listMyPets();
+    notifyListeners();
+  }
+
+  Future<void> fetchPetDetail(String id) async {
+    try {
+      _selectedPet = await _repository.getMyPet(id);
+      notifyListeners();
+    } catch (_) {}
   }
 
   void setSelectedBreed(BreedModel? breed) {
