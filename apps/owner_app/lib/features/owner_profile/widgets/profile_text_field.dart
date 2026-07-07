@@ -13,6 +13,9 @@ class ProfileTextField extends StatelessWidget {
   final String? errorText;
   final bool isRequired;
   final int maxLines;
+  final bool readOnly;
+  final VoidCallback? onTap;
+  final Widget? suffixIcon;
 
   const ProfileTextField({
     super.key,
@@ -25,6 +28,9 @@ class ProfileTextField extends StatelessWidget {
     this.errorText,
     this.isRequired = false,
     this.maxLines = 1,
+    this.readOnly = false,
+    this.onTap,
+    this.suffixIcon,
   });
 
   @override
@@ -37,7 +43,7 @@ class ProfileTextField extends StatelessWidget {
           text: TextSpan(
             text: label,
             style: AppTextStyles.body(context).copyWith(
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.bold,
             ),
             children: [
               if (isRequired)
@@ -60,9 +66,26 @@ class ProfileTextField extends StatelessWidget {
           controller: controller,
           keyboardType: keyboardType,
           maxLines: maxLines,
+          readOnly: readOnly,
+          onTap: onTap,
           style: AppTextStyles.body(context),
           decoration: InputDecoration(
-            hintText: hintText,
+            hint: Text.rich(
+              TextSpan(
+                text: hintText.replaceAll('*', ''),
+                style: AppTextStyles.hint(context),
+                children: [
+                  if (hintText.contains('*'))
+                    TextSpan(
+                      text: '*',
+                      style: TextStyle(
+                        color: AppColors.error,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                ],
+              ),
+            ),
             hintStyle: AppTextStyles.hint(context),
             prefixIcon: prefixIcon != null
                 ? Icon(
@@ -71,6 +94,7 @@ class ProfileTextField extends StatelessWidget {
                   )
                 : null,
             prefix: prefix, // Custom prefix widget support (e.g. 🇹🇭 +66)
+            suffixIcon: suffixIcon,
             filled: true,
             fillColor: Colors.white,
             errorText: errorText,
@@ -78,20 +102,24 @@ class ProfileTextField extends StatelessWidget {
               horizontal: context.nw(18),
               vertical: context.nh(16),
             ),
+
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(
                 context.radius(18),
               ),
               borderSide: const BorderSide(
-                color: AppColors.border,
+                color: Color.fromARGB(255, 0, 0, 0),
+                width: 1.5,
               ),
             ),
+
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(
                 context.radius(18),
               ),
               borderSide: const BorderSide(
-                color: AppColors.border,
+                color: Color.fromARGB(255, 0, 0, 0),
+                width: 1.5,
               ),
             ),
             focusedBorder: OutlineInputBorder(
@@ -99,8 +127,8 @@ class ProfileTextField extends StatelessWidget {
                 context.radius(18),
               ),
               borderSide: const BorderSide(
-                color: AppColors.primary,
-                width: 2,
+                color: Color.fromARGB(255, 0, 0, 0),
+                width: 2.5,
               ),
             ),
           ),

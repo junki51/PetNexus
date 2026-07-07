@@ -165,11 +165,14 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
     if (!mounted) return;
 
     if (success) {
+      final navigator = Navigator.of(context);
       AppDialog.showMessage(
         context: context,
         title: 'สำเร็จ',
         message: 'ตั้งค่าโปรไฟล์เรียบร้อยแล้ว!',
-      );
+      ).then((_) {
+        navigator.pushReplacementNamed(AppRoutes.selectPet);
+      });
     } else {
       final error = context.read<OwnerProfileController>().errorMessage;
       AppDialog.showMessage(

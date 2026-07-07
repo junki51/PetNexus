@@ -59,7 +59,7 @@ class AuthRepository {
   Future<UserModel> getCurrentUser() async {
     try {
       final response = await ApiClient.instance.dio.get(
-        "/auth/me",
+        "/me",
       );
 
       return UserModel.fromJson(response.data);

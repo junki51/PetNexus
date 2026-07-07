@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_text_styles.dart';
 import '../../layout/responsive_layout.dart';
 
@@ -43,18 +42,16 @@ class AppDropdown<T> extends StatelessWidget {
             fillColor: Colors.white,
 
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(
-                context.radius(18),
-              ),
+              borderRadius: BorderRadius.circular(context.radius(18)),
+              borderSide: const BorderSide(color: Colors.black, width: 1.5), // เปลี่ยนเป็นสีดำ
             ),
-
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(
-                context.radius(18),
-              ),
-              borderSide: BorderSide(
-                color: AppColors.border,
-              ),
+              borderRadius: BorderRadius.circular(context.radius(18)),
+              borderSide: const BorderSide(color: Colors.black, width: 1.5), // เปลี่ยนเป็นสีดำ
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(context.radius(18)),
+              borderSide: const BorderSide(color: Colors.black, width: 2.5), // เปลี่ยนเป็นสีดำหนาขึ้น
             ),
           ),
 
