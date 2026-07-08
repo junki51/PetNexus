@@ -71,7 +71,7 @@ func (r *petRepository) FindByOwnerPhone(phone string) ([]models.Pet, error) {
 
 func (r *petRepository) FindByID(id uuid.UUID) (*models.Pet, error) {
 	var pet models.Pet
-	if err := r.db.Preload("Breed").First(&pet, "id = ?", id).Error; err != nil {
+	if err := r.db.Preload("Breed").Preload("OwnerProfile").First(&pet, "id = ?", id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, ErrPetNotFound
 		}

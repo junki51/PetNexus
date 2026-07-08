@@ -53,6 +53,10 @@ Owner behavior is unchanged by clinic role support.
 - `GET /api/pets`
 - `GET /api/pets/:id`
 - `PATCH /api/pets/:id`
+- `POST /api/owner/appointments`
+- `GET /api/owner/appointments`
+- `GET /api/owner/appointments/:id`
+- `PATCH /api/owner/appointments/:id/cancel`
 
 Clinic roles receive 403 `FORBIDDEN_ROLE` on these routes.
 
@@ -63,6 +67,11 @@ Clinic roles receive 403 `FORBIDDEN_ROLE` on these routes.
 - `PATCH /api/clinic/profile`
 - `GET /api/clinic/pet-lookup?pet_id=PNX-PET-XXXXXX`
 - `GET /api/clinic/pet-lookup?owner_phone=<exact-phone>`
+- `POST /api/clinic/appointments`
+- `GET /api/clinic/appointments`
+- `GET /api/clinic/appointments/:id`
+- `PATCH /api/clinic/appointments/:id/status`
+- `PATCH /api/clinic/appointments/:id/cancel`
 
 Allowed roles are canonical `clinic` and legacy-compatible `clinic_staff`.
 Owner receives 403 `FORBIDDEN_ROLE`.
@@ -80,6 +89,8 @@ not grant clinic access to the pet or expose medical/private owner data.
 - Pet DTOs do not expose `owner_profile_id`.
 - Services resolve profiles and ownership through repositories.
 - Another owner's pet returns 404 rather than exposing its existence.
+- Owner and clinic appointment repositories always scope detail/update queries
+  by the JWT-derived profile ID; cross-account appointments return 404.
 
 ## Common authorization-related status codes
 

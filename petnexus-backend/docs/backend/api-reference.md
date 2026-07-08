@@ -429,3 +429,138 @@ Limited lookup item:
 
 The response deliberately excludes owner address, email/user ID, pet
 microchip, weight, distinctive marks, and all medical data.
+
+## Owner Appointments
+
+All owner appointment routes require JWT role `owner` and an existing owner
+profile. The backend derives owner ownership from JWT.
+
+### `POST /api/owner/appointments`
+
+Creates a `requested` appointment for one pet owned by the current owner.
+
+```json
+{
+  "clinic_profile_id": "clinic-profile-uuid",
+  "pet_id": "pet-uuid",
+  "title": "Annual checkup",
+  "appointment_type": "checkup",
+  "scheduled_at": "2026-07-10T10:00:00+07:00",
+  "duration_minutes": 30,
+  "note": "Bring vaccine card"
+}
+```
+
+- **Success:** 201.
+- **Errors:** 400 invalid UUID/type/time/duration/body; 401; 403; 404 owner
+  profile, clinic, or owned pet not found; 500.
+
+### `GET /api/owner/appointments`
+
+Returns the current owner's appointments sorted by scheduled time ascending.
+Optional filters: `date_from=YYYY-MM-DD`, `date_to=YYYY-MM-DD`, and
+`status`.
+
+### `GET /api/owner/appointments/:id`
+
+Returns one current-owner appointment. Another owner's appointment returns 404.
+
+### `PATCH /api/owner/appointments/:id/cancel`
+
+Cancels one current-owner appointment and sets `cancelled_at`. Repeating the
+request is idempotent.
+
+## Clinic Appointments
+
+Clinic appointment routes require JWT role `clinic`; legacy `clinic_staff`
+remains compatible. The backend derives `clinic_profile_id` from JWT.
+
+### `POST /api/clinic/appointments`
+
+Creates a `scheduled` appointment. Supply exactly one pet lookup field:
+
+```json
+{
+  "public_pet_id": "PNX-PET-A1B2C3",
+  "appointment_type": "vaccination",
+  "scheduled_at": "2026-07-11T09:30:00+07:00",
+  "duration_minutes": 45,
+  "note": "Booster dose"
+}
+```
+
+`pet_id` may be used instead. Both or neither pet field returns 400.
+
+### `GET /api/clinic/appointments`
+
+Returns all appointments belonging to the current clinic, sorted by
+`scheduled_at` ascending. Optional filters:
+
+- `date=YYYY-MM-DD`
+- `date_from=YYYY-MM-DD&date_to=YYYY-MM-DD`
+- `status=requested|scheduled|checked_in|completed|cancelled`
+- `appointment_type=<allowed-type>`
+
+Calendar dates use UTC. `date_to` includes its complete day. Exact `date`
+cannot be combined with range fields. With no date filter, all clinic
+appointments are returned.
+
+### `GET /api/clinic/appointments/:id`
+
+Returns one appointment under the current clinic profile. Another clinic's
+appointment returns 404.
+
+### `PATCH /api/clinic/appointments/:id/status`
+
+```json
+{
+  "status": "checked_in"
+}
+```
+
+All five appointment statuses are accepted. This sprint intentionally has no
+complex transition engine. Setting a non-cancelled status clears
+`cancelled_at`.
+
+### `PATCH /api/clinic/appointments/:id/cancel`
+
+Cancels one current-clinic appointment and is idempotent.
+
+### Appointment response
+
+```json
+{
+  "id": "appointment-uuid",
+  "title": "Annual checkup",
+  "appointment_type": "checkup",
+  "scheduled_at": "2026-07-10T03:00:00Z",
+  "duration_minutes": 30,
+  "status": "requested",
+  "note": "Bring vaccine card",
+  "created_by_role": "owner",
+  "cancelled_at": null,
+  "created_at": "2026-07-08T08:00:00Z",
+  "updated_at": "2026-07-08T08:00:00Z",
+  "pet": {
+    "id": "pet-uuid",
+    "public_pet_id": "PNX-PET-A1B2C3",
+    "name": "Milo",
+    "species": "dog",
+    "avatar_url": null,
+    "breed": null
+  },
+  "owner": {
+    "display_name": "Sunny Example",
+    "masked_phone": "081****678"
+  },
+  "clinic": {
+    "id": "clinic-profile-uuid",
+    "clinic_name": "Happy Paws Clinic",
+    "phone_number": "02-123-4567",
+    "email": "clinic@example.com"
+  }
+}
+```
+
+Responses omit internal owner/clinic profile ownership IDs, creator user ID,
+password data, JWT claims, private owner profile data, and medical data.

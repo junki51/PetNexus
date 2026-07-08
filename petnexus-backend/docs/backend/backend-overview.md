@@ -17,7 +17,7 @@ PostgreSQL and organized around owner-controlled pet identity.
 
 ## Completed backend scope
 
-Sprint 1–7 currently supports:
+Sprint 1–8 currently supports:
 
 - application health check
 - PostgreSQL health check
@@ -31,6 +31,9 @@ Sprint 1–7 currently supports:
 - owner pet create/list/detail/partial update
 - backend-generated permanent public pet IDs
 - clinic pet lookup by public pet ID or exact owner phone
+- owner and clinic appointment scheduling
+- clinic calendar date/status/type filtering
+- clinic appointment status and cancellation actions
 - database startup migration using guarded, idempotent SQL
 
 ## Supported owner flow
@@ -41,6 +44,7 @@ Register/login as owner
 → Select dog/cat and breed
 → Create pet
 → List/fetch/update own pets
+→ Create/list/detail/cancel own appointments
 ```
 
 The backend resolves the owner profile from the JWT user ID. Clients do not
@@ -53,6 +57,7 @@ Register/login as clinic
 → Create clinic profile
 → Fetch/update clinic profile settings
 → Look up limited pet identity by public pet ID or exact owner phone
+→ Create/list appointments and manage calendar status
 ```
 
 `clinic` is the canonical Clinic Web Dashboard role. Legacy `clinic_staff`
@@ -67,7 +72,7 @@ resolved from the JWT user ID.
 - authorized clinic/patient relationships
 - medical records and verified visits
 - pet timeline
-- calendar and appointments
+- appointment overlap/capacity management and external calendar sync
 - reports and analytics
 - notifications
 - real image/file upload

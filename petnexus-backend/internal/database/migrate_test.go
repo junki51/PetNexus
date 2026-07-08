@@ -195,6 +195,41 @@ func TestClinicProfilesMigrationMatchesModelAndUsesGuardedConstraints(t *testing
 	}
 }
 
+func TestAppointmentsMigrationIsSafeAndMatchesSprint8Model(t *testing.T) {
+	migrationSQL := allMigrationSQL()
+	for _, fragment := range []string{
+		"CREATE TABLE IF NOT EXISTS appointments",
+		"owner_profile_id UUID NOT NULL",
+		"clinic_profile_id UUID NOT NULL",
+		"pet_id UUID NOT NULL",
+		"title VARCHAR(150)",
+		"appointment_type VARCHAR(50) NOT NULL",
+		"scheduled_at TIMESTAMPTZ NOT NULL",
+		"duration_minutes INTEGER NOT NULL",
+		"status VARCHAR(50) NOT NULL",
+		"created_by_user_id UUID",
+		"created_by_role VARCHAR(20) NOT NULL",
+		"cancelled_at TIMESTAMPTZ",
+		"CREATE INDEX IF NOT EXISTS idx_appointments_clinic_scheduled_at",
+		"CREATE INDEX IF NOT EXISTS idx_appointments_owner_scheduled_at",
+		"FOREIGN KEY (owner_profile_id) REFERENCES owner_profiles(id)",
+		"FOREIGN KEY (clinic_profile_id) REFERENCES clinic_profiles(id)",
+		"FOREIGN KEY (pet_id) REFERENCES pets(id)",
+		"FOREIGN KEY (created_by_user_id) REFERENCES users(id)",
+		"'checkup', 'vaccination', 'consultation', 'follow_up'",
+		"'requested', 'scheduled', 'checked_in', 'completed', 'cancelled'",
+		"created_by_role IN ('owner', 'clinic')",
+		"duration_minutes BETWEEN 5 AND 480",
+	} {
+		if !strings.Contains(migrationSQL, fragment) {
+			t.Fatalf("appointment migration SQL does not include %q", fragment)
+		}
+	}
+	if strings.Contains(strings.ToUpper(createAppointmentsTableSQL+ensureAppointmentConstraintsSQL), "DROP ") {
+		t.Fatal("appointment migration must not drop existing schema objects")
+	}
+}
+
 func allMigrationSQL() string {
 	var builder strings.Builder
 	for _, step := range migrationSteps {

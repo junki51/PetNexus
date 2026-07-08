@@ -2,7 +2,7 @@
 
 PostgreSQL schema is created by guarded startup SQL in
 `internal/database/migrate.go`. Manual equivalents are numbered in
-`migrations/001` through `006`. GORM AutoMigrate is intentionally not used for
+`migrations/001` through `007`. GORM AutoMigrate is intentionally not used for
 existing tables.
 
 ## Relationship overview
@@ -12,6 +12,9 @@ users 1 ── 0..1 owner_profiles
 users 1 ── 0..1 clinic_profiles
 owner_profiles 1 ── N pets
 breeds 1 ── N pets (optional from pet side)
+owner_profiles 1 ── N appointments
+clinic_profiles 1 ── N appointments
+pets 1 ── N appointments
 ```
 
 ## `users`
@@ -158,3 +161,31 @@ JWT user ID → clinic_profiles.user_id
 
 Repository lookups and service rules enforce these relationships before data is
 returned or updated.
+
+## `appointments`
+
+**Purpose:** Scheduling foundation for owners and the Clinic Web Calendar.
+
+Important fields:
+
+- UUID `id`
+- required `owner_profile_id`, `clinic_profile_id`, and `pet_id`
+- optional `title` and `note`
+- required `appointment_type`, `scheduled_at`, `duration_minutes`, and
+  `status`
+- nullable `created_by_user_id`, required canonical `created_by_role`
+- nullable `cancelled_at`
+- timestamps
+
+Rules:
+
+- type: `checkup`, `vaccination`, `consultation`, `follow_up`,
+  `grooming`, `emergency`, or `other`
+- status: `requested`, `scheduled`, `checked_in`, `completed`, or
+  `cancelled`
+- creator role: `owner` or `clinic`
+- duration: 5–480 minutes
+- guarded foreign keys reference owner profiles, clinic profiles, pets, and
+  optional creator user
+- indexes cover each ownership key, pet, scheduled time, status, plus
+  clinic/time and owner/time composites

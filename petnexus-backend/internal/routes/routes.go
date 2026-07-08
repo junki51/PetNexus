@@ -14,14 +14,16 @@ import (
 // Dependencies contains the concrete application dependencies needed by the
 // route layer.
 type Dependencies struct {
-	Config              config.Config
-	DB                  *gorm.DB
-	AuthHandler         *handlers.AuthHandler
-	OwnerHandler        *handlers.OwnerProfileHandler
-	BreedHandler        *handlers.BreedHandler
-	PetHandler          *handlers.PetHandler
-	ClinicHandler       *handlers.ClinicProfileHandler
-	ClinicLookupHandler *handlers.ClinicPetLookupHandler
+	Config                   config.Config
+	DB                       *gorm.DB
+	AuthHandler              *handlers.AuthHandler
+	OwnerHandler             *handlers.OwnerProfileHandler
+	BreedHandler             *handlers.BreedHandler
+	PetHandler               *handlers.PetHandler
+	ClinicHandler            *handlers.ClinicProfileHandler
+	ClinicLookupHandler      *handlers.ClinicPetLookupHandler
+	OwnerAppointmentHandler  *handlers.OwnerAppointmentHandler
+	ClinicAppointmentHandler *handlers.ClinicAppointmentHandler
 }
 
 // Register attaches all currently available routes to the router.
@@ -47,6 +49,10 @@ func Register(router *gin.Engine, deps Dependencies) {
 	owner.POST("/profile", deps.OwnerHandler.CreateProfile)
 	owner.GET("/profile", deps.OwnerHandler.GetProfile)
 	owner.PATCH("/profile", deps.OwnerHandler.UpdateProfile)
+	owner.POST("/appointments", deps.OwnerAppointmentHandler.CreateAppointment)
+	owner.GET("/appointments", deps.OwnerAppointmentHandler.ListAppointments)
+	owner.GET("/appointments/:id", deps.OwnerAppointmentHandler.GetAppointment)
+	owner.PATCH("/appointments/:id/cancel", deps.OwnerAppointmentHandler.CancelAppointment)
 
 	api.GET("/breeds", deps.BreedHandler.ListBreeds)
 
@@ -69,6 +75,11 @@ func Register(router *gin.Engine, deps Dependencies) {
 	clinic.GET("/profile", deps.ClinicHandler.GetMyClinicProfile)
 	clinic.PATCH("/profile", deps.ClinicHandler.UpdateMyClinicProfile)
 	clinic.GET("/pet-lookup", deps.ClinicLookupHandler.LookupPet)
+	clinic.POST("/appointments", deps.ClinicAppointmentHandler.CreateAppointment)
+	clinic.GET("/appointments", deps.ClinicAppointmentHandler.ListAppointments)
+	clinic.GET("/appointments/:id", deps.ClinicAppointmentHandler.GetAppointment)
+	clinic.PATCH("/appointments/:id/status", deps.ClinicAppointmentHandler.UpdateAppointmentStatus)
+	clinic.PATCH("/appointments/:id/cancel", deps.ClinicAppointmentHandler.CancelAppointment)
 
 	// TODO: Register future route groups for:
 	// /api/authorizations

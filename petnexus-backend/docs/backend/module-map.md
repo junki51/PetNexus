@@ -70,10 +70,25 @@
   lookup returns an empty `items` array when there are no matches. Owner phone is
   masked and private owner/pet fields are excluded.
 
+## Appointment Calendar module
+
+- **Purpose:** Schedule owner/clinic appointments and provide real Clinic Web
+  Calendar data.
+- **Main table:** `appointments`.
+- **Owner endpoints:** POST/GET `/api/owner/appointments`,
+  GET `/api/owner/appointments/:id`, PATCH cancel.
+- **Clinic endpoints:** POST/GET `/api/clinic/appointments`,
+  GET detail, PATCH status, and PATCH cancel.
+- **Access:** Owner routes are owner-only; clinic routes accept canonical
+  `clinic` and legacy-compatible `clinic_staff`.
+- **Rules:** Ownership profiles come from JWT, owners can schedule only their
+  pets, cross-scope access returns 404, and calendar results sort by
+  `scheduled_at` ascending.
+
 ## Shared infrastructure
 
 - JWT authentication middleware injects user ID and role into Gin context.
 - Role middleware checks route allow-lists.
 - Response helper enforces one JSON envelope.
 - Typed application errors keep internal causes out of responses.
-- Startup SQL creates only currently implemented Sprint 1–7 schema.
+- Startup SQL creates only currently implemented Sprint 1–8 schema.

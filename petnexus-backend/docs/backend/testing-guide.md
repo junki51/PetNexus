@@ -265,7 +265,7 @@ $clinicProfileBody = @{
   address = "123 Pet Street, Bangkok"
 } | ConvertTo-Json
 
-Invoke-RestMethod -Method POST `
+$clinicProfile = Invoke-RestMethod -Method POST `
   -Uri "$baseUrl/api/clinic/profile" `
   -Headers $clinicHeaders `
   -ContentType "application/json" `
@@ -315,6 +315,140 @@ $lookupByPhone.data.items
 Expected: the public ID lookup returns the created pet, and exact phone lookup
 contains it. Owner phone is masked. Private owner address and private pet fields
 are absent.
+
+## Sprint 8 appointment flow
+
+The commands below reuse `$ownerHeaders`, `$clinicHeaders`, `$petId`,
+`$publicPetId`, and `$clinicProfile` created above.
+
+### Owner creates and lists an appointment
+
+```powershell
+$scheduledAt = [DateTime]::UtcNow.AddDays(2).ToString("yyyy-MM-ddTHH:mm:ssZ")
+$calendarDate = [DateTime]::UtcNow.AddDays(2).ToString("yyyy-MM-dd")
+
+$ownerAppointmentBody = @{
+  clinic_profile_id = $clinicProfile.data.id
+  pet_id = $petId
+  title = "Annual checkup"
+  appointment_type = "checkup"
+  scheduled_at = $scheduledAt
+  duration_minutes = 30
+  note = "Bring vaccine card"
+} | ConvertTo-Json
+
+$ownerAppointment = Invoke-RestMethod -Method POST `
+  -Uri "$baseUrl/api/owner/appointments" `
+  -Headers $ownerHeaders `
+  -ContentType "application/json" `
+  -Body $ownerAppointmentBody
+
+$ownerAppointmentId = $ownerAppointment.data.id
+
+Invoke-RestMethod -Method GET `
+  -Uri "$baseUrl/api/owner/appointments?status=requested" `
+  -Headers $ownerHeaders
+
+Invoke-RestMethod -Method GET `
+  -Uri "$baseUrl/api/owner/appointments/$ownerAppointmentId" `
+  -Headers $ownerHeaders
+```
+
+Expected: creation returns 201 with status `requested`.
+
+### Clinic creates by public pet ID and uses calendar filters
+
+```powershell
+$clinicAppointmentBody = @{
+  public_pet_id = $publicPetId
+  appointment_type = "vaccination"
+  scheduled_at = [DateTime]::UtcNow.AddDays(3).ToString("yyyy-MM-ddTHH:mm:ssZ")
+  duration_minutes = 45
+} | ConvertTo-Json
+
+$clinicAppointment = Invoke-RestMethod -Method POST `
+  -Uri "$baseUrl/api/clinic/appointments" `
+  -Headers $clinicHeaders `
+  -ContentType "application/json" `
+  -Body $clinicAppointmentBody
+
+$clinicAppointmentId = $clinicAppointment.data.id
+
+Invoke-RestMethod -Method GET `
+  -Uri "$baseUrl/api/clinic/appointments" `
+  -Headers $clinicHeaders
+
+Invoke-RestMethod -Method GET `
+  -Uri "$baseUrl/api/clinic/appointments?date=$calendarDate&status=requested&appointment_type=checkup" `
+  -Headers $clinicHeaders
+```
+
+Expected: clinic creation returns status `scheduled`; the day filter includes
+the owner-created appointment.
+
+### Clinic updates status and both roles can cancel scoped appointments
+
+```powershell
+$statusBody = @{ status = "checked_in" } | ConvertTo-Json
+
+Invoke-RestMethod -Method PATCH `
+  -Uri "$baseUrl/api/clinic/appointments/$ownerAppointmentId/status" `
+  -Headers $clinicHeaders `
+  -ContentType "application/json" `
+  -Body $statusBody
+
+Invoke-RestMethod -Method PATCH `
+  -Uri "$baseUrl/api/clinic/appointments/$clinicAppointmentId/cancel" `
+  -Headers $clinicHeaders
+
+Invoke-RestMethod -Method PATCH `
+  -Uri "$baseUrl/api/owner/appointments/$ownerAppointmentId/cancel" `
+  -Headers $ownerHeaders
+```
+
+### Sprint 8 negative checks
+
+```powershell
+# No token: 401
+try {
+  Invoke-RestMethod -Method GET "$baseUrl/api/clinic/appointments"
+} catch { $_.Exception.Response.StatusCode.value__ }
+
+# Owner on clinic route: 403
+try {
+  Invoke-RestMethod -Method GET "$baseUrl/api/clinic/appointments" -Headers $ownerHeaders
+} catch { $_.Exception.Response.StatusCode.value__ }
+
+# Clinic on owner route: 403
+try {
+  Invoke-RestMethod -Method GET "$baseUrl/api/owner/appointments" -Headers $clinicHeaders
+} catch { $_.Exception.Response.StatusCode.value__ }
+
+# Invalid status: 400
+try {
+  Invoke-RestMethod -Method PATCH `
+    -Uri "$baseUrl/api/clinic/appointments/$ownerAppointmentId/status" `
+    -Headers $clinicHeaders `
+    -ContentType "application/json" `
+    -Body (@{ status = "unknown" } | ConvertTo-Json)
+} catch { $_.Exception.Response.StatusCode.value__ }
+
+# Invalid type, duration, or past scheduled_at: 400
+$invalidAppointmentBody = @{
+  public_pet_id = $publicPetId
+  appointment_type = "unsupported"
+  scheduled_at = [DateTime]::UtcNow.AddHours(-1).ToString("yyyy-MM-ddTHH:mm:ssZ")
+  duration_minutes = 2
+} | ConvertTo-Json
+
+try {
+  Invoke-RestMethod -Method POST `
+    -Uri "$baseUrl/api/clinic/appointments" `
+    -Headers $clinicHeaders `
+    -ContentType "application/json" `
+    -Body $invalidAppointmentBody
+} catch { $_.Exception.Response.StatusCode.value__ }
+```
 
 ## Negative tests
 

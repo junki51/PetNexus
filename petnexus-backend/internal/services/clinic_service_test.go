@@ -38,6 +38,13 @@ func (r *clinicProfileRepositoryStub) FindByUserID(userID uuid.UUID) (*models.Cl
 	return r.profile, nil
 }
 
+func (r *clinicProfileRepositoryStub) FindByID(id uuid.UUID) (*models.ClinicProfile, error) {
+	if r.profile == nil || r.profile.ID != id {
+		return nil, repositories.ErrClinicProfileNotFound
+	}
+	return r.profile, nil
+}
+
 func (r *clinicProfileRepositoryStub) ExistsByUserID(userID uuid.UUID) (bool, error) {
 	return r.exists, nil
 }

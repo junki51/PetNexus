@@ -4,7 +4,7 @@ PetNexus is a digital pet passport and owner-controlled pet identity platform. T
 
 ## Stack
 
-Sprint 7 uses Go, Gin, godotenv, PostgreSQL, GORM, Docker Compose, bcrypt, and JWT access tokens. Safe SQL migrations run automatically at startup; the versioned SQL files can also be applied manually with `psql`.
+Sprint 8 uses Go, Gin, godotenv, PostgreSQL, GORM, Docker Compose, bcrypt, and JWT access tokens. Safe SQL migrations run automatically at startup; the versioned SQL files can also be applied manually with `psql`.
 
 ## Architecture
 
@@ -100,6 +100,7 @@ Get-Content .\migrations\003_create_owner_profiles.sql | docker exec -i petnexus
 Get-Content .\migrations\004_create_breeds_and_pets.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
 Get-Content .\migrations\005_create_clinic_profiles.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
 Get-Content .\migrations\006_add_public_pet_id.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
+Get-Content .\migrations\007_create_appointments.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
 ```
 
 If Docker shows a different container name, replace `petnexus-postgres` in the
@@ -835,21 +836,88 @@ try {
 } catch { $_.Exception.Response.StatusCode.value__ }
 ```
 
-Not included: QR tokens, access requests, owner approval, appointments,
+Not included: QR tokens, access requests, owner approval,
 medical records, timeline, reports, notifications, or frontend code.
+
+## Sprint 8: Appointment Calendar Foundation
+
+Sprint 8 adds real appointment data for the Clinic Web Calendar while keeping
+medical records, staff schedules, payments, reports, notifications, and
+external calendar sync out of scope.
+
+Owner endpoints:
+
+```text
+POST  /api/owner/appointments
+GET   /api/owner/appointments
+GET   /api/owner/appointments/:id
+PATCH /api/owner/appointments/:id/cancel
+```
+
+Clinic endpoints:
+
+```text
+POST  /api/clinic/appointments
+GET   /api/clinic/appointments
+GET   /api/clinic/appointments/:id
+PATCH /api/clinic/appointments/:id/status
+PATCH /api/clinic/appointments/:id/cancel
+```
+
+Rules:
+
+- Owner routes require JWT role `owner` and resolve `owner_profile_id` from
+  the current user.
+- Clinic routes require JWT role `clinic` (legacy `clinic_staff` remains
+  compatible) and resolve `clinic_profile_id` from the current user.
+- Owners can create appointments only for their own pets.
+- Clinics can create appointments using exactly one of `pet_id` or
+  `public_pet_id`.
+- Cross-owner and cross-clinic appointment access returns 404.
+- New owner appointments start as `requested`; clinic-created appointments
+  start as `scheduled`.
+- `scheduled_at` must be a future RFC3339 timestamp and duration must be
+  between 5 and 480 minutes.
+
+Appointment types:
+
+```text
+checkup, vaccination, consultation, follow_up, grooming, emergency, other
+```
+
+Statuses:
+
+```text
+requested, scheduled, checked_in, completed, cancelled
+```
+
+Clinic calendar filters:
+
+```text
+GET /api/clinic/appointments?date=2026-07-10
+GET /api/clinic/appointments?date_from=2026-07-01&date_to=2026-07-31
+GET /api/clinic/appointments?status=scheduled&appointment_type=vaccination
+```
+
+No date filter returns all appointments for the authenticated clinic, sorted by
+`scheduled_at` ascending. `date_to` includes the complete final UTC day.
+Detailed PowerShell commands are in
+[`docs/backend/testing-guide.md`](docs/backend/testing-guide.md).
 
 ## Current status
 
-Sprint 7 adds unique backend-generated public pet IDs, safe existing-pet
-backfill, and privacy-limited clinic lookup by public ID or exact owner phone.
-Sprint 1–6 endpoints remain available.
+Sprint 8 adds owner/clinic appointment scheduling, scoped appointment
+management, status/cancellation actions, and clinic calendar filtering.
+Sprint 1–7 endpoints remain available.
 
-Pet Passport, QR sharing, clinic access requests, authorization decisions, visits, timelines, notifications, real file uploads, Flutter UI, and clinic web UI are deliberately not implemented in this sprint.
+Medical records, dashboard aggregation, reports, notifications, staff
+schedules, payment, Google Calendar sync, full QR sharing, and frontend work
+are deliberately not implemented in this sprint.
 
 รายละเอียดสิ่งที่ทำแล้วและข้อมูลส่งต่องานอยู่ที่ [`docs/progress/README.md`](docs/progress/README.md)
 
 ## Recommended next step
 
-Deploy/redeploy to Render and repeat the Sprint 7 migration and lookup smoke
-flow. Design clinic access authorization separately; QR should remain an
-optional shortcut that resolves to a lookup value rather than the core flow.
+Deploy/redeploy to Render and repeat the Sprint 8 migration and appointment
+smoke flow. Medical records and more complex appointment workflows should stay
+in separate later sprints.

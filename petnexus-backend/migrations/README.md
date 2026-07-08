@@ -17,6 +17,8 @@ Startup migration behavior:
   foreign key to `users(id)`
 - adds unique `pets.public_pet_id`, backfills existing pets, and enforces
   non-null IDs after backfill
+- creates `appointments` with guarded ownership foreign keys, checks, and
+  calendar lookup indexes
 - avoids GORM `AutoMigrate` so startup will not try to drop or
   rewrite missing constraints on an existing database
 - stops application startup if migration fails
@@ -34,6 +36,8 @@ Current migrations:
    unique user index, and guarded user foreign key.
 6. `006_add_public_pet_id.sql` adds the Sprint 7 public pet identifier, safely
    backfills existing pets, creates its unique index, and enforces not-null.
+7. `007_create_appointments.sql` creates the Sprint 8 appointment calendar
+   foundation, indexes, foreign keys, and allowed-value checks.
 
 The SQL files can still be applied manually in numeric order. PowerShell commands are documented in the project `README.md`.
 

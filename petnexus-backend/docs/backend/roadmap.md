@@ -2,7 +2,7 @@
 
 ## Completed
 
-Sprint 1–7 are implemented and tested:
+Sprint 1–8 are implemented and tested:
 
 - Backend and health foundation
 - PostgreSQL connection and guarded startup migration
@@ -11,8 +11,9 @@ Sprint 1–7 are implemented and tested:
 - Breed catalog and basic Pet management
 - Clinic Profile foundation
 - Pet public ID and clinic pet lookup
+- Appointment Calendar foundation
 
-See [Sprint 1–7 summary](../sprints/sprint-1-to-7-summary.md).
+See [Sprint 1–8 summary](../sprints/sprint-1-to-8-summary.md).
 
 ## Not implemented
 
@@ -25,7 +26,7 @@ See [Sprint 1–7 summary](../sprints/sprint-1-to-7-summary.md).
 - Medical records
 - Verified visits
 - Pet timeline
-- Calendar and appointments
+- Appointment overlap/capacity and staff scheduling
 - Reports and analytics
 - Notifications
 - Real file/image upload
@@ -35,9 +36,9 @@ See [Sprint 1–7 summary](../sprints/sprint-1-to-7-summary.md).
 Placeholder files for some future domains are not implemented APIs and must not
 be treated as working features.
 
-## Recommended Sprint 8 planning topic
+## Recommended Sprint 9 planning topic
 
-Sprint 8 should design **Clinic Access Request**, with QR treated only as an
+Sprint 9 should design **Clinic Access Request**, with QR treated only as an
 optional transport for the public pet ID. The design should answer:
 
 1. How a clinic requests access after finding a pet.

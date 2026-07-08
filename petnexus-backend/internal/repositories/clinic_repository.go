@@ -18,9 +18,21 @@ var (
 // ClinicProfileRepository defines database-only clinic profile operations.
 type ClinicProfileRepository interface {
 	Create(profile *models.ClinicProfile) error
+	FindByID(id uuid.UUID) (*models.ClinicProfile, error)
 	FindByUserID(userID uuid.UUID) (*models.ClinicProfile, error)
 	ExistsByUserID(userID uuid.UUID) (bool, error)
 	Update(profile *models.ClinicProfile) error
+}
+
+func (r *clinicProfileRepository) FindByID(id uuid.UUID) (*models.ClinicProfile, error) {
+	var profile models.ClinicProfile
+	if err := r.db.Where("id = ?", id).First(&profile).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrClinicProfileNotFound
+		}
+		return nil, fmt.Errorf("find clinic profile by ID: %w", err)
+	}
+	return &profile, nil
 }
 
 type clinicProfileRepository struct {

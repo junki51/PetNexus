@@ -13,6 +13,7 @@
 | [Sprint 5: Breed + Pet Creation](./sprint-05-breed-pet-creation.md) | เสร็จและทดสอบในเครื่องแล้ว | Breed catalog และ owner-only pet basic profile APIs |
 | [Sprint 6: Clinic Profile Foundation](./sprint-06-clinic-profile-foundation.md) | โค้ดเสร็จและ automated tests ผ่าน | Clinic-staff-only create, get และ patch clinic profile APIs |
 | [Sprint 7: Public Pet ID + Clinic Lookup](./sprint-07-public-pet-id-clinic-lookup.md) | โค้ดเสร็จและ local smoke test ผ่าน | Backend-generated public pet IDs และ privacy-limited clinic lookup |
+| [Sprint 8: Appointment Calendar Foundation](./sprint-08-appointment-calendar-foundation.md) | โค้ดเสร็จและ local smoke test ผ่าน | Owner/clinic appointment APIs, ownership scope และ calendar filters |
 
 ## Deployment updates
 

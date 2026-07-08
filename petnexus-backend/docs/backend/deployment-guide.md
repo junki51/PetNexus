@@ -72,6 +72,7 @@ Startup safely ensures:
 - `pets`
 - unique public pet IDs and backfill for existing pets
 - `clinic_profiles`
+- `appointments`, its calendar indexes, ownership foreign keys, and checks
 - required indexes, checks, and foreign keys
 
 Migration SQL uses `IF NOT EXISTS` or guarded PostgreSQL blocks. See
