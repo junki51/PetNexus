@@ -230,6 +230,47 @@ func TestAppointmentsMigrationIsSafeAndMatchesSprint8Model(t *testing.T) {
 	}
 }
 
+func TestMedicalRecordsMigrationIsSafeAndMatchesSprint10Model(t *testing.T) {
+	migrationSQL := allMigrationSQL()
+	for _, fragment := range []string{
+		"CREATE TABLE IF NOT EXISTS medical_records",
+		"clinic_profile_id UUID NOT NULL",
+		"pet_id UUID NOT NULL",
+		"appointment_id UUID",
+		"created_by_user_id UUID NOT NULL",
+		"visit_at TIMESTAMPTZ NOT NULL",
+		"chief_complaint TEXT NOT NULL",
+		"clinical_findings TEXT",
+		"diagnosis TEXT",
+		"treatment_plan TEXT",
+		"medications TEXT",
+		"follow_up_instructions TEXT",
+		"next_follow_up_at TIMESTAMPTZ",
+		"weight_kg NUMERIC(6,2)",
+		"temperature_c NUMERIC(5,2)",
+		"CREATE INDEX IF NOT EXISTS idx_medical_records_clinic_profile_id",
+		"CREATE INDEX IF NOT EXISTS idx_medical_records_pet_id",
+		"CREATE INDEX IF NOT EXISTS idx_medical_records_clinic_visit_at",
+		"CREATE INDEX IF NOT EXISTS idx_medical_records_pet_visit_at",
+		"CREATE UNIQUE INDEX IF NOT EXISTS idx_medical_records_appointment_id_unique",
+		"WHERE appointment_id IS NOT NULL",
+		"FOREIGN KEY (clinic_profile_id) REFERENCES clinic_profiles(id)",
+		"FOREIGN KEY (pet_id) REFERENCES pets(id)",
+		"FOREIGN KEY (appointment_id) REFERENCES appointments(id)",
+		"FOREIGN KEY (created_by_user_id) REFERENCES users(id)",
+		"CHECK (weight_kg IS NULL OR weight_kg > 0)",
+		"CHECK (temperature_c IS NULL OR temperature_c > 0)",
+		"CHECK (next_follow_up_at IS NULL OR next_follow_up_at >= visit_at)",
+	} {
+		if !strings.Contains(migrationSQL, fragment) {
+			t.Fatalf("medical record migration SQL does not include %q", fragment)
+		}
+	}
+	if strings.Contains(strings.ToUpper(createMedicalRecordsTableSQL+ensureMedicalRecordConstraintsSQL), "DROP ") {
+		t.Fatal("medical record migration must not drop existing schema objects")
+	}
+}
+
 func allMigrationSQL() string {
 	var builder strings.Builder
 	for _, step := range migrationSteps {

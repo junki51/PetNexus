@@ -2,7 +2,7 @@
 
 PostgreSQL schema is created by guarded startup SQL in
 `internal/database/migrate.go`. Manual equivalents are numbered in
-`migrations/001` through `007`. GORM AutoMigrate is intentionally not used for
+`migrations/001` through `008`. GORM AutoMigrate is intentionally not used for
 existing tables. Sprint 9 adds no migration because clinic patients are derived
 from appointment relationships.
 
@@ -206,3 +206,36 @@ and appointments.status <> 'cancelled'
 The repository joins the derived pet IDs to `pets`, `owner_profiles`, and
 `breeds` for safe patient list/detail responses. Cross-clinic access is hidden
 as 404 at the service layer.
+
+## `medical_records`
+
+**Purpose:** Clinic-owned clinical notes for one patient visit.
+
+Important fields:
+
+- UUID `id`
+- required `clinic_profile_id`, `pet_id`, and `created_by_user_id`
+- nullable `appointment_id`
+- required `visit_at` and `chief_complaint`
+- nullable `clinical_findings`, `diagnosis`, `treatment_plan`, `medications`,
+  `follow_up_instructions`, `next_follow_up_at`, `weight_kg`,
+  `temperature_c`, and `notes`
+- timestamps
+
+Rules:
+
+- `clinic_profile_id` references `clinic_profiles(id)`
+- `pet_id` references `pets(id)`
+- `appointment_id` references `appointments(id)` and is nullable
+- `created_by_user_id` references `users(id)`
+- partial unique index `idx_medical_records_appointment_id_unique` allows at
+  most one medical record per non-null appointment
+- indexes cover clinic, pet, clinic/visit date, and pet/visit date lookups
+- `weight_kg` and `temperature_c` must be positive when supplied
+- `next_follow_up_at` must not be earlier than `visit_at`
+
+No `owner_profile_id` is stored directly because owner data is derived through:
+
+```text
+medical_records.pet_id -> pets.owner_profile_id -> owner_profiles.id
+```

@@ -34,6 +34,7 @@ func main() {
 	clinicProfileRepo := repositories.NewClinicProfileRepository(db)
 	appointmentRepo := repositories.NewAppointmentRepository(db)
 	clinicPatientRepo := repositories.NewClinicPatientRepository(db)
+	medicalRecordRepo := repositories.NewMedicalRecordRepository(db)
 	authService := services.NewAuthService(userRepo, cfg)
 	ownerProfileService := services.NewOwnerProfileService(ownerProfileRepo)
 	breedService := services.NewBreedService(breedRepo)
@@ -43,6 +44,7 @@ func main() {
 	ownerAppointmentService := services.NewOwnerAppointmentService(appointmentRepo, ownerProfileRepo, clinicProfileRepo, petRepo)
 	clinicAppointmentService := services.NewClinicAppointmentService(appointmentRepo, clinicProfileRepo, petRepo)
 	clinicPatientService := services.NewClinicPatientService(clinicPatientRepo, clinicProfileRepo)
+	medicalRecordService := services.NewMedicalRecordService(medicalRecordRepo, clinicProfileRepo)
 	authHandler := handlers.NewAuthHandler(authService)
 	ownerProfileHandler := handlers.NewOwnerProfileHandler(ownerProfileService)
 	breedHandler := handlers.NewBreedHandler(breedService)
@@ -52,6 +54,7 @@ func main() {
 	ownerAppointmentHandler := handlers.NewOwnerAppointmentHandler(ownerAppointmentService)
 	clinicAppointmentHandler := handlers.NewClinicAppointmentHandler(clinicAppointmentService)
 	clinicPatientHandler := handlers.NewClinicPatientHandler(clinicPatientService)
+	medicalRecordHandler := handlers.NewMedicalRecordHandler(medicalRecordService)
 
 	router := gin.Default()
 	routes.Register(router, routes.Dependencies{
@@ -66,6 +69,7 @@ func main() {
 		OwnerAppointmentHandler:  ownerAppointmentHandler,
 		ClinicAppointmentHandler: clinicAppointmentHandler,
 		ClinicPatientHandler:     clinicPatientHandler,
+		MedicalRecordHandler:     medicalRecordHandler,
 	})
 
 	log.Printf("PetNexus backend listening on http://localhost:%s", cfg.Port)

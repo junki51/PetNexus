@@ -541,6 +541,160 @@ try {
 } catch { $_.Exception.Response.StatusCode.value__ } # Expected: 404
 ```
 
+## Sprint 10 medical record flow
+
+The commands below reuse `$ownerHeaders`, `$clinicHeaders`, `$petId`, and
+`$clinicAppointmentId` from the owner/clinic/patient/appointment setup flow.
+Run this against local PostgreSQL first, then repeat after Render deployment by
+changing only `$baseUrl`.
+
+### Create a medical record for a patient
+
+```powershell
+$visitAt = [DateTime]::UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
+$nextFollowUpAt = [DateTime]::UtcNow.AddDays(7).ToString("yyyy-MM-ddTHH:mm:ssZ")
+
+$medicalRecordBody = @{
+  appointmentId = $clinicAppointmentId
+  visitAt = $visitAt
+  chiefComplaint = "Coughing and reduced appetite"
+  clinicalFindings = "Mild fever"
+  diagnosis = "Upper respiratory infection"
+  treatmentPlan = "Rest and medication"
+  medications = "Medication notes as free text"
+  followUpInstructions = "Follow up in 7 days"
+  nextFollowUpAt = $nextFollowUpAt
+  weightKg = 12.5
+  temperatureC = 38.2
+  notes = "Owner informed"
+} | ConvertTo-Json
+
+$medicalRecord = Invoke-RestMethod -Method POST `
+  -Uri "$baseUrl/api/clinic/patients/$petId/medical-records" `
+  -Headers $clinicHeaders `
+  -ContentType "application/json" `
+  -Body $medicalRecordBody
+
+$medicalRecordId = $medicalRecord.data.id
+```
+
+Expected: 201. Response includes pet, owner, appointment, and minimal
+`createdBy` information.
+
+### Create a walk-in or historical record without appointmentId
+
+```powershell
+$walkInBody = @{
+  visitAt = [DateTime]::UtcNow.AddMinutes(-10).ToString("yyyy-MM-ddTHH:mm:ssZ")
+  chiefComplaint = "Walk-in skin irritation"
+  diagnosis = "Mild dermatitis"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Method POST `
+  -Uri "$baseUrl/api/clinic/patients/$petId/medical-records" `
+  -Headers $clinicHeaders `
+  -ContentType "application/json" `
+  -Body $walkInBody
+```
+
+Expected: 201 when the pet is already a patient of the clinic.
+
+### List and filter medical records
+
+```powershell
+Invoke-RestMethod -Method GET `
+  -Uri "$baseUrl/api/clinic/medical-records" `
+  -Headers $clinicHeaders
+
+Invoke-RestMethod -Method GET `
+  -Uri "$baseUrl/api/clinic/medical-records?pet_id=$petId" `
+  -Headers $clinicHeaders
+
+$fromDate = [DateTime]::UtcNow.AddDays(-1).ToString("yyyy-MM-dd")
+$toDate = [DateTime]::UtcNow.AddDays(1).ToString("yyyy-MM-dd")
+Invoke-RestMethod -Method GET `
+  -Uri "$baseUrl/api/clinic/medical-records?from=$fromDate&to=$toDate&page=1&limit=20" `
+  -Headers $clinicHeaders
+```
+
+Expected: data contains `items` and `pagination`.
+
+### Get and patch a medical record
+
+```powershell
+Invoke-RestMethod -Method GET `
+  -Uri "$baseUrl/api/clinic/medical-records/$medicalRecordId" `
+  -Headers $clinicHeaders
+
+$medicalPatchBody = @{
+  chiefComplaint = "Coughing improved"
+  diagnosis = "Recovering upper respiratory infection"
+  treatmentPlan = "Continue medication"
+  weightKg = 12.8
+  temperatureC = 37.8
+  notes = "Improving"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Method PATCH `
+  -Uri "$baseUrl/api/clinic/medical-records/$medicalRecordId" `
+  -Headers $clinicHeaders `
+  -ContentType "application/json" `
+  -Body $medicalPatchBody
+```
+
+### Sprint 10 negative checks
+
+```powershell
+# No token: 401
+try {
+  Invoke-RestMethod -Method GET "$baseUrl/api/clinic/medical-records"
+} catch { $_.Exception.Response.StatusCode.value__ }
+
+# Owner on clinic medical records route: 403
+try {
+  Invoke-RestMethod -Method GET "$baseUrl/api/clinic/medical-records" -Headers $ownerHeaders
+} catch { $_.Exception.Response.StatusCode.value__ }
+
+# Invalid record id: 400
+try {
+  Invoke-RestMethod -Method GET "$baseUrl/api/clinic/medical-records/not-a-uuid" -Headers $clinicHeaders
+} catch { $_.Exception.Response.StatusCode.value__ }
+
+# Invalid pet id on create: 400
+try {
+  Invoke-RestMethod -Method POST `
+    -Uri "$baseUrl/api/clinic/patients/not-a-uuid/medical-records" `
+    -Headers $clinicHeaders `
+    -ContentType "application/json" `
+    -Body $medicalRecordBody
+} catch { $_.Exception.Response.StatusCode.value__ }
+
+# Duplicate appointment medical record: 409
+try {
+  Invoke-RestMethod -Method POST `
+    -Uri "$baseUrl/api/clinic/patients/$petId/medical-records" `
+    -Headers $clinicHeaders `
+    -ContentType "application/json" `
+    -Body $medicalRecordBody
+} catch { $_.Exception.Response.StatusCode.value__ }
+
+# Invalid vitals/date: 400
+$invalidMedicalRecordBody = @{
+  visitAt = $visitAt
+  chiefComplaint = "Invalid vitals"
+  weightKg = 0
+  temperatureC = -1
+  nextFollowUpAt = [DateTime]::UtcNow.AddDays(-1).ToString("yyyy-MM-ddTHH:mm:ssZ")
+} | ConvertTo-Json
+try {
+  Invoke-RestMethod -Method POST `
+    -Uri "$baseUrl/api/clinic/patients/$petId/medical-records" `
+    -Headers $clinicHeaders `
+    -ContentType "application/json" `
+    -Body $invalidMedicalRecordBody
+} catch { $_.Exception.Response.StatusCode.value__ }
+```
+
 ## Negative tests
 
 ### No token returns 401

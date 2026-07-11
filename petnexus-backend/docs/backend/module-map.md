@@ -98,11 +98,25 @@
   cross-clinic or unrelated pet access returns 404; owner phone is masked and
   internal owner/user/profile IDs are not returned.
 
+## Medical Record module
+
+- **Purpose:** Store clinic-owned clinical notes for patient visits.
+- **Main table:** `medical_records`.
+- **Endpoints:** POST `/api/clinic/patients/:petId/medical-records`, GET
+  `/api/clinic/medical-records`, GET/PATCH
+  `/api/clinic/medical-records/:recordId`.
+- **Access:** Canonical `clinic` role and legacy-compatible `clinic_staff`.
+- **Rules:** The current clinic profile and creator user come from JWT; the pet
+  comes from the URL path; a clinic can create records only for its existing
+  patients; optional appointment links must belong to the same clinic and pet,
+  must not be cancelled, and can have at most one medical record; cross-clinic
+  records return 404.
+
 ## Shared infrastructure
 
 - JWT authentication middleware injects user ID and role into Gin context.
 - Role middleware checks route allow-lists.
 - Response helper enforces one JSON envelope.
 - Typed application errors keep internal causes out of responses.
-- Startup SQL creates only currently implemented Sprint 1-9 schema; Sprint 9
+- Startup SQL creates only currently implemented Sprint 1-10 schema; Sprint 9
   does not add schema because patients are derived from appointments.

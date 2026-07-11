@@ -691,3 +691,185 @@ Example detail data:
 Clinic Patients responses deliberately omit `user_id`, `owner_profile_id`,
 `clinic_profile_id`, password data, JWT claims, full owner address, medical
 records, visits, reports, notifications, payment, and staff schedule data.
+
+## Medical Records
+
+Medical Record routes require JWT and a clinic-side role: canonical `clinic`,
+with legacy `clinic_staff` retained for compatibility.
+
+Sprint 10 implements one clinic-owned table: `medical_records`. It does not
+implement visits, owner timeline, files, lab results, vaccination records,
+prescription tables, audit logs, or version history.
+
+### `POST /api/clinic/patients/:petId/medical-records`
+
+- **Purpose:** Create a medical record for one current-clinic patient.
+- **Auth/role:** JWT required; `clinic` or `clinic_staff`.
+- **Path:** `:petId` must be a UUID.
+- **Success:** 201; `data` is a Medical Record detail object.
+- **Common errors:** 400 invalid body/UUID/date/vitals, 401, 403, 404
+  `CLINIC_PROFILE_REQUIRED`/`CLINIC_PATIENT_NOT_FOUND`/`APPOINTMENT_NOT_FOUND`,
+  409 `APPOINTMENT_MEDICAL_RECORD_EXISTS`, 500.
+- **Backend notes:** `clinic_profile_id`, `created_by_user_id`, and `pet_id`
+  are derived by the backend. They are not accepted in the request body.
+
+Request:
+
+```json
+{
+  "appointmentId": "optional-appointment-uuid",
+  "visitAt": "2026-07-11T08:00:00Z",
+  "chiefComplaint": "Coughing and reduced appetite",
+  "clinicalFindings": "Mild fever",
+  "diagnosis": "Upper respiratory infection",
+  "treatmentPlan": "Rest and medication",
+  "medications": "Medication notes as free text",
+  "followUpInstructions": "Follow up in 7 days",
+  "nextFollowUpAt": "2026-07-18T08:00:00Z",
+  "weightKg": 12.5,
+  "temperatureC": 38.2,
+  "notes": "Owner informed"
+}
+```
+
+`appointmentId` is optional. When supplied, it must belong to the authenticated
+clinic, match `:petId`, not be cancelled, and not already have a medical
+record.
+
+### `GET /api/clinic/medical-records`
+
+- **Purpose:** List medical records for the current clinic.
+- **Auth/role:** JWT required; `clinic` or `clinic_staff`.
+- **Success:** 200; `data` is `{ "items": [...], "pagination": {...} }`.
+- **Common errors:** 400 invalid query, 401, 403, 404
+  `CLINIC_PROFILE_REQUIRED`, 500.
+
+Supported query parameters:
+
+| Query | Description |
+| --- | --- |
+| `pet_id` | Optional pet UUID |
+| `from` | Optional visit date lower bound, `YYYY-MM-DD` |
+| `to` | Optional visit date upper bound, `YYYY-MM-DD`; includes the full day |
+| `page` | Optional positive integer; default 1 |
+| `limit` | Optional positive integer; default 20, max 100 |
+
+Records are sorted by `visitAt` descending.
+
+Example list data:
+
+```json
+{
+  "items": [
+    {
+      "id": "medical-record-uuid",
+      "visitAt": "2026-07-11T08:00:00Z",
+      "chiefComplaint": "Coughing and reduced appetite",
+      "diagnosis": "Upper respiratory infection",
+      "createdAt": "2026-07-11T08:10:00Z",
+      "updatedAt": "2026-07-11T08:10:00Z",
+      "pet": {
+        "id": "pet-uuid",
+        "publicPetId": "PNX-PET-A1B2C3",
+        "name": "Milo",
+        "species": "dog",
+        "breed": null
+      },
+      "owner": {
+        "id": "owner-profile-uuid",
+        "fullName": "Sunny Example",
+        "phoneNumber": "0812345678"
+      },
+      "appointment": {
+        "id": "appointment-uuid",
+        "scheduledAt": "2026-07-11T08:00:00Z",
+        "status": "checked_in"
+      }
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "totalPages": 1
+  }
+}
+```
+
+### `GET /api/clinic/medical-records/:recordId`
+
+- **Purpose:** Fetch one current-clinic medical record.
+- **Auth/role:** JWT required; `clinic` or `clinic_staff`.
+- **Path:** `:recordId` must be a UUID.
+- **Success:** 200; `data` is a Medical Record detail object.
+- **Common errors:** 400 `INVALID_MEDICAL_RECORD_ID`, 401, 403, 404
+  `MEDICAL_RECORD_NOT_FOUND`, 500.
+- **Backend notes:** Another clinic's record returns 404.
+
+### `PATCH /api/clinic/medical-records/:recordId`
+
+- **Purpose:** Update clinical fields on one current-clinic medical record.
+- **Auth/role:** JWT required; `clinic` or `clinic_staff`.
+- **Success:** 200; `data` is the updated Medical Record detail object.
+- **Common errors:** 400 invalid body/date/vitals/empty patch, 401, 403, 404,
+  500.
+- **Backend notes:** The API does not allow changing `id`, `clinic_profile_id`,
+  `pet_id`, `appointment_id`, `created_by_user_id`, or `created_at`.
+
+Allowed patch fields:
+
+```json
+{
+  "visitAt": "2026-07-11T08:30:00Z",
+  "chiefComplaint": "Updated complaint",
+  "clinicalFindings": "Updated findings",
+  "diagnosis": "Updated diagnosis",
+  "treatmentPlan": "Updated plan",
+  "medications": "Updated medication notes",
+  "followUpInstructions": "Updated follow-up",
+  "nextFollowUpAt": "2026-07-18T08:30:00Z",
+  "weightKg": 13.1,
+  "temperatureC": 38.0,
+  "notes": "Updated notes"
+}
+```
+
+Medical Record detail includes all list fields plus clinical detail fields and
+minimal `createdBy` info:
+
+```json
+{
+  "id": "medical-record-uuid",
+  "visitAt": "2026-07-11T08:00:00Z",
+  "chiefComplaint": "Coughing and reduced appetite",
+  "clinicalFindings": "Mild fever",
+  "diagnosis": "Upper respiratory infection",
+  "treatmentPlan": "Rest and medication",
+  "medications": "Medication notes as free text",
+  "followUpInstructions": "Follow up in 7 days",
+  "nextFollowUpAt": "2026-07-18T08:00:00Z",
+  "weightKg": 12.5,
+  "temperatureC": 38.2,
+  "notes": "Owner informed",
+  "createdAt": "2026-07-11T08:10:00Z",
+  "updatedAt": "2026-07-11T08:10:00Z",
+  "pet": {
+    "id": "pet-uuid",
+    "publicPetId": "PNX-PET-A1B2C3",
+    "name": "Milo",
+    "species": "dog",
+    "breed": null
+  },
+  "owner": {
+    "id": "owner-profile-uuid",
+    "fullName": "Sunny Example",
+    "phoneNumber": "0812345678"
+  },
+  "appointment": null,
+  "createdBy": {
+    "id": "user-uuid",
+    "email": "clinic@example.com",
+    "role": "clinic"
+  }
+}
+```

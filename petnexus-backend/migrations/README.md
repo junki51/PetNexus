@@ -21,6 +21,9 @@ Startup migration behavior:
   calendar lookup indexes
 - Sprint 9 adds no migration because clinic patients are derived from
   non-cancelled appointments
+- creates `medical_records` with guarded clinic/pet/appointment/user foreign
+  keys, visit indexes, positive vital checks, and an idempotent partial unique
+  appointment index
 - avoids GORM `AutoMigrate` so startup will not try to drop or
   rewrite missing constraints on an existing database
 - stops application startup if migration fails
@@ -40,10 +43,13 @@ Current migrations:
    backfills existing pets, creates its unique index, and enforces not-null.
 7. `007_create_appointments.sql` creates the Sprint 8 appointment calendar
    foundation, indexes, foreign keys, and allowed-value checks.
+8. `008_create_medical_records.sql` creates the Sprint 10 medical record
+   foundation, indexes, foreign keys, allowed vital checks, and one-record-per
+   appointment partial unique index.
 
-No `008` migration exists for Sprint 9. Clinic patient list/detail data is
-derived from the existing appointment relationship and does not require a
-separate `patients` table.
+Sprint 9 has no migration. Clinic patient list/detail data is derived from the
+existing appointment relationship and does not require a separate `patients`
+table.
 
 The SQL files can still be applied manually in numeric order. PowerShell commands are documented in the project `README.md`.
 

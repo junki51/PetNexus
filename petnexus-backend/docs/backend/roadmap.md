@@ -2,7 +2,7 @@
 
 ## Completed
 
-Sprint 1-9 are implemented and tested:
+Sprint 1-10 are implemented and tested:
 
 - Backend and health foundation
 - PostgreSQL connection and guarded startup migration
@@ -13,8 +13,9 @@ Sprint 1-9 are implemented and tested:
 - Pet public ID and clinic pet lookup
 - Appointment Calendar foundation
 - Clinic Patient List backend
+- Medical Records foundation
 
-See [Sprint 1-9 summary](../sprints/sprint-1-to-9-summary.md).
+See [Sprint 1-10 summary](../sprints/sprint-1-to-10-summary.md).
 
 ## Not implemented
 
@@ -23,7 +24,6 @@ See [Sprint 1-9 summary](../sprints/sprint-1-to-9-summary.md).
 - Clinic access request
 - Owner approval/rejection
 - Authorized clinic relationships
-- Medical records
 - Verified visits
 - Pet timeline
 - Appointment overlap/capacity and staff scheduling
@@ -38,7 +38,7 @@ be treated as working features.
 
 ## Recommended next planning topic
 
-The next backend sprint should design **Medical Records / Visit Records
+The next backend sprint should design **Visit Records / Owner Medical Timeline
 Foundation** or **Clinic Access Request**, but should not combine both. If
 Clinic Access Request is selected, QR should remain only an optional transport
 for the public pet ID. The design should answer:

@@ -25,6 +25,7 @@ type Dependencies struct {
 	OwnerAppointmentHandler  *handlers.OwnerAppointmentHandler
 	ClinicAppointmentHandler *handlers.ClinicAppointmentHandler
 	ClinicPatientHandler     *handlers.ClinicPatientHandler
+	MedicalRecordHandler     *handlers.MedicalRecordHandler
 }
 
 // Register attaches all currently available routes to the router.
@@ -78,11 +79,15 @@ func Register(router *gin.Engine, deps Dependencies) {
 	clinic.GET("/pet-lookup", deps.ClinicLookupHandler.LookupPet)
 	clinic.GET("/patients", deps.ClinicPatientHandler.ListPatients)
 	clinic.GET("/patients/:petId", deps.ClinicPatientHandler.GetPatient)
+	clinic.POST("/patients/:petId/medical-records", deps.MedicalRecordHandler.CreateMedicalRecord)
 	clinic.POST("/appointments", deps.ClinicAppointmentHandler.CreateAppointment)
 	clinic.GET("/appointments", deps.ClinicAppointmentHandler.ListAppointments)
 	clinic.GET("/appointments/:id", deps.ClinicAppointmentHandler.GetAppointment)
 	clinic.PATCH("/appointments/:id/status", deps.ClinicAppointmentHandler.UpdateAppointmentStatus)
 	clinic.PATCH("/appointments/:id/cancel", deps.ClinicAppointmentHandler.CancelAppointment)
+	clinic.GET("/medical-records", deps.MedicalRecordHandler.ListMedicalRecords)
+	clinic.GET("/medical-records/:recordId", deps.MedicalRecordHandler.GetMedicalRecord)
+	clinic.PATCH("/medical-records/:recordId", deps.MedicalRecordHandler.UpdateMedicalRecord)
 
 	// TODO: Register future route groups for:
 	// /api/authorizations

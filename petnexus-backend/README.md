@@ -4,7 +4,7 @@ PetNexus is a digital pet passport and owner-controlled pet identity platform. T
 
 ## Stack
 
-Sprint 9 uses Go, Gin, godotenv, PostgreSQL, GORM, Docker Compose, bcrypt, and JWT access tokens. Safe SQL migrations run automatically at startup; the versioned SQL files can also be applied manually with `psql`.
+Sprint 10 uses Go, Gin, godotenv, PostgreSQL, GORM, Docker Compose, bcrypt, and JWT access tokens. Safe SQL migrations run automatically at startup; the versioned SQL files can also be applied manually with `psql`.
 
 ## Architecture
 
@@ -76,8 +76,9 @@ The container exposes PostgreSQL on `localhost:5432` and stores its data in a na
 The backend automatically runs a safe, idempotent SQL startup migration before
 registering routes. It ensures `pgcrypto`, the `user_role` enum, `users`,
 `owner_profiles`, `breeds`, `pets`, `clinic_profiles`, public pet IDs, and
-`appointments`. Unique indexes enforce one account per email, one owner profile
-per user, and unique breed names per species. Startup stops immediately
+`appointments`, and `medical_records`. Unique indexes enforce one account per
+email, one owner profile per user, unique breed names per species, and at most
+one medical record per appointment. Startup stops immediately
 with a clear error if schema migration fails. This supports fresh Render
 PostgreSQL databases and avoids GORM `AutoMigrate` constraint rewrites on
 existing databases.
@@ -85,6 +86,9 @@ existing databases.
 Sprint 9 does not add a migration or a `patients` table. Clinic patients are
 derived from existing non-cancelled appointments plus pet, owner profile, and
 breed data.
+
+Sprint 10 adds `medical_records` through an idempotent startup migration and
+manual migration file `008_create_medical_records.sql`.
 
 The commands below remain available when you want to apply or inspect the SQL
 manually during local development.
@@ -105,12 +109,13 @@ Get-Content .\migrations\004_create_breeds_and_pets.sql | docker exec -i petnexu
 Get-Content .\migrations\005_create_clinic_profiles.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
 Get-Content .\migrations\006_add_public_pet_id.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
 Get-Content .\migrations\007_create_appointments.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
+Get-Content .\migrations\008_create_medical_records.sql | docker exec -i petnexus-postgres psql -v ON_ERROR_STOP=1 -U postgres -d petnexus
 ```
 
 If Docker shows a different container name, replace `petnexus-postgres` in the
 commands. These migrations create the currently implemented auth, owner
-profile, breed catalog, basic pet profile, clinic profile, public pet ID, and
-appointment schema only.
+profile, breed catalog, basic pet profile, clinic profile, public pet ID,
+appointment, and medical record schema only.
 
 ## Run the backend
 
@@ -957,20 +962,95 @@ is capped at 100. `offset` defaults to 0.
 Detailed Sprint 9 PowerShell commands are in
 [`docs/backend/testing-guide.md`](docs/backend/testing-guide.md).
 
+## Sprint 10: Medical Records Foundation Backend
+
+Sprint 10 adds clinic-owned medical records for patient visits. Medical
+records are backend-only in this sprint and are available only to the clinic
+that owns the record.
+
+New table:
+
+```text
+medical_records
+```
+
+Medical Record endpoints:
+
+```text
+POST  /api/clinic/patients/:petId/medical-records
+GET   /api/clinic/medical-records
+GET   /api/clinic/medical-records/:recordId
+PATCH /api/clinic/medical-records/:recordId
+```
+
+Rules:
+
+- JWT and clinic-side role are required (`clinic`; legacy `clinic_staff`
+  remains compatible).
+- Owner tokens receive 403; missing/invalid tokens receive 401.
+- The backend derives `clinic_profile_id` and `created_by_user_id` from the
+  authenticated JWT user.
+- `pet_id` comes from the URL path during creation; it is not accepted in the
+  request body.
+- A clinic can create a medical record only for an existing patient, meaning a
+  pet with at least one non-cancelled appointment with that clinic.
+- Optional `appointmentId` must belong to the same clinic and pet, must not be
+  cancelled, and can have at most one medical record.
+- Cross-clinic medical records return 404.
+- DELETE, file uploads, lab results, vaccination records, prescriptions tables,
+  version history, owner timeline, reports, and notifications are intentionally
+  not implemented.
+
+Create request example:
+
+```json
+{
+  "appointmentId": "optional-appointment-uuid",
+  "visitAt": "2026-07-11T08:00:00Z",
+  "chiefComplaint": "Coughing and reduced appetite",
+  "clinicalFindings": "Mild fever",
+  "diagnosis": "Upper respiratory infection",
+  "treatmentPlan": "Rest and medication",
+  "medications": "Medication notes as free text",
+  "followUpInstructions": "Follow up in 7 days",
+  "nextFollowUpAt": "2026-07-18T08:00:00Z",
+  "weightKg": 12.5,
+  "temperatureC": 38.2,
+  "notes": "Owner informed"
+}
+```
+
+List filters:
+
+```text
+GET /api/clinic/medical-records
+GET /api/clinic/medical-records?pet_id=<pet-uuid>
+GET /api/clinic/medical-records?from=2026-07-01&to=2026-07-31
+GET /api/clinic/medical-records?page=1&limit=20
+```
+
+`from` and `to` use `YYYY-MM-DD`; `to` includes the full final UTC day.
+List results are sorted by `visitAt` descending and include pagination metadata.
+
+Detailed Sprint 10 PowerShell commands are in
+[`docs/backend/testing-guide.md`](docs/backend/testing-guide.md).
+
 ## Current status
 
-Sprint 9 adds clinic patient list/detail APIs derived from appointments so the
-Clinic Web Patients page can use real backend data. Sprint 1-8 endpoints
+Sprint 10 adds clinic-only medical record create/list/detail/update APIs for
+clinic patients. Sprint 1-9 endpoints
 remain available.
 
-Medical records, visit records, dashboard aggregation, reports, notifications,
-staff schedules, payment, Google Calendar sync, full QR sharing, and frontend
-work are deliberately not implemented in this sprint.
+Visit records, dashboard aggregation, reports, notifications, staff schedules,
+payment, Google Calendar sync, full QR sharing, frontend work, file uploads,
+lab results, vaccination records, prescription tables, audit logs, and medical
+record version history are deliberately not implemented in this sprint.
 
 รายละเอียดสิ่งที่ทำแล้วและข้อมูลส่งต่องานอยู่ที่ [`docs/progress/README.md`](docs/progress/README.md)
 
 ## Recommended next step
 
-Deploy/redeploy to Render and repeat the Sprint 9 patient smoke flow after the
-existing appointment flow. Medical records and more complex patient/visit
-workflows should stay in separate later sprints.
+Deploy/redeploy to Render and repeat the Sprint 10 medical record smoke flow
+after the existing owner, clinic, patient, and appointment setup flow. Local
+PostgreSQL and Render PostgreSQL are separate databases, so verify both when
+needed.
