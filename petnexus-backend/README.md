@@ -4,7 +4,7 @@ PetNexus is a digital pet passport and owner-controlled pet identity platform. T
 
 ## Stack
 
-Sprint 8 uses Go, Gin, godotenv, PostgreSQL, GORM, Docker Compose, bcrypt, and JWT access tokens. Safe SQL migrations run automatically at startup; the versioned SQL files can also be applied manually with `psql`.
+Sprint 9 uses Go, Gin, godotenv, PostgreSQL, GORM, Docker Compose, bcrypt, and JWT access tokens. Safe SQL migrations run automatically at startup; the versioned SQL files can also be applied manually with `psql`.
 
 ## Architecture
 
@@ -74,13 +74,17 @@ The container exposes PostgreSQL on `localhost:5432` and stores its data in a na
 ## Run startup migrations
 
 The backend automatically runs a safe, idempotent SQL startup migration before
-registering routes. It ensures `pgcrypto`, the `user_role` enum, the `users`
-table, `owner_profiles`, `breeds`, and `pets`. Unique indexes enforce one
-account per email, one owner profile per user, and unique breed names per
-species. Startup stops immediately
+registering routes. It ensures `pgcrypto`, the `user_role` enum, `users`,
+`owner_profiles`, `breeds`, `pets`, `clinic_profiles`, public pet IDs, and
+`appointments`. Unique indexes enforce one account per email, one owner profile
+per user, and unique breed names per species. Startup stops immediately
 with a clear error if schema migration fails. This supports fresh Render
 PostgreSQL databases and avoids GORM `AutoMigrate` constraint rewrites on
 existing databases.
+
+Sprint 9 does not add a migration or a `patients` table. Clinic patients are
+derived from existing non-cancelled appointments plus pet, owner profile, and
+breed data.
 
 The commands below remain available when you want to apply or inspect the SQL
 manually during local development.
@@ -105,8 +109,8 @@ Get-Content .\migrations\007_create_appointments.sql | docker exec -i petnexus-p
 
 If Docker shows a different container name, replace `petnexus-postgres` in the
 commands. These migrations create the currently implemented auth, owner
-profile, breed catalog, basic pet profile, clinic profile, and public pet ID
-schema only.
+profile, breed catalog, basic pet profile, clinic profile, public pet ID, and
+appointment schema only.
 
 ## Run the backend
 
@@ -904,20 +908,69 @@ No date filter returns all appointments for the authenticated clinic, sorted by
 Detailed PowerShell commands are in
 [`docs/backend/testing-guide.md`](docs/backend/testing-guide.md).
 
+## Sprint 9: Clinic Patient List Backend
+
+Sprint 9 adds real backend data for the Clinic Web Patients page without
+creating a separate `patients` table. A clinic patient is a unique pet that has
+at least one non-cancelled appointment with the authenticated clinic profile.
+
+Clinic patient endpoints:
+
+```text
+GET /api/clinic/patients
+GET /api/clinic/patients/:petId
+```
+
+Rules:
+
+- JWT and clinic-side role are required (`clinic`; legacy `clinic_staff`
+  remains compatible).
+- Owner tokens receive 403; missing/invalid tokens receive 401.
+- The backend resolves `clinic_profile_id` from the current JWT user.
+- Clinics only see pets related to their own clinic through non-cancelled
+  appointments.
+- Cross-clinic or unrelated pet access returns 404.
+- Owner `user_id`, `owner_profile_id`, `clinic_profile_id`, password data, JWT
+  claims, full owner address, and medical records are not returned.
+- Owner phone is masked using the same behavior as clinic pet lookup.
+
+List filters:
+
+```text
+GET /api/clinic/patients
+GET /api/clinic/patients?q=milo
+GET /api/clinic/patients?species=dog
+GET /api/clinic/patients?status=scheduled
+GET /api/clinic/patients?limit=20&offset=0
+GET /api/clinic/patients?sort=name_asc
+```
+
+Supported sort values:
+
+```text
+latest_appointment_desc, latest_appointment_asc, name_asc, name_desc, next_appointment_asc
+```
+
+The default sort is latest appointment descending. `limit` defaults to 20 and
+is capped at 100. `offset` defaults to 0.
+
+Detailed Sprint 9 PowerShell commands are in
+[`docs/backend/testing-guide.md`](docs/backend/testing-guide.md).
+
 ## Current status
 
-Sprint 8 adds owner/clinic appointment scheduling, scoped appointment
-management, status/cancellation actions, and clinic calendar filtering.
-Sprint 1–7 endpoints remain available.
+Sprint 9 adds clinic patient list/detail APIs derived from appointments so the
+Clinic Web Patients page can use real backend data. Sprint 1-8 endpoints
+remain available.
 
-Medical records, dashboard aggregation, reports, notifications, staff
-schedules, payment, Google Calendar sync, full QR sharing, and frontend work
-are deliberately not implemented in this sprint.
+Medical records, visit records, dashboard aggregation, reports, notifications,
+staff schedules, payment, Google Calendar sync, full QR sharing, and frontend
+work are deliberately not implemented in this sprint.
 
 รายละเอียดสิ่งที่ทำแล้วและข้อมูลส่งต่องานอยู่ที่ [`docs/progress/README.md`](docs/progress/README.md)
 
 ## Recommended next step
 
-Deploy/redeploy to Render and repeat the Sprint 8 migration and appointment
-smoke flow. Medical records and more complex appointment workflows should stay
-in separate later sprints.
+Deploy/redeploy to Render and repeat the Sprint 9 patient smoke flow after the
+existing appointment flow. Medical records and more complex patient/visit
+workflows should stay in separate later sprints.

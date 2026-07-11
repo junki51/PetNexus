@@ -450,6 +450,97 @@ try {
 } catch { $_.Exception.Response.StatusCode.value__ }
 ```
 
+## Sprint 9 clinic patient flow
+
+The commands below reuse `$ownerHeaders`, `$clinicHeaders`, `$petId`,
+`$publicPetId`, and an existing non-cancelled appointment between the clinic
+and pet from the Sprint 8 flow.
+
+### List clinic patients
+
+```powershell
+$patients = Invoke-RestMethod -Method GET `
+  -Uri "$baseUrl/api/clinic/patients" `
+  -Headers $clinicHeaders
+
+$patients.data
+```
+
+Expected: the created pet appears once with pet summary, masked owner phone,
+and appointment summary.
+
+### Filter clinic patients
+
+```powershell
+Invoke-RestMethod -Method GET `
+  -Uri "$baseUrl/api/clinic/patients?q=Milo" `
+  -Headers $clinicHeaders
+
+Invoke-RestMethod -Method GET `
+  -Uri "$baseUrl/api/clinic/patients?species=dog" `
+  -Headers $clinicHeaders
+
+Invoke-RestMethod -Method GET `
+  -Uri "$baseUrl/api/clinic/patients?limit=20&offset=0&sort=latest_appointment_desc" `
+  -Headers $clinicHeaders
+```
+
+Expected: filters remain scoped to the authenticated clinic.
+
+### Get clinic patient detail
+
+```powershell
+$patientDetail = Invoke-RestMethod -Method GET `
+  -Uri "$baseUrl/api/clinic/patients/$petId" `
+  -Headers $clinicHeaders
+
+$patientDetail.data
+```
+
+Expected: pet detail, owner summary with masked phone, clinic relationship
+summary, and recent non-cancelled appointments. The response must not include
+`user_id`, `owner_profile_id`, `clinic_profile_id`, owner address, password
+data, JWT claims, medical records, visits, reports, payment, or staff schedule
+data.
+
+### Sprint 9 negative checks
+
+```powershell
+# No token: 401
+try {
+  Invoke-RestMethod -Method GET "$baseUrl/api/clinic/patients"
+} catch { $_.Exception.Response.StatusCode.value__ }
+
+# Owner on clinic patients route: 403
+try {
+  Invoke-RestMethod -Method GET "$baseUrl/api/clinic/patients" -Headers $ownerHeaders
+} catch { $_.Exception.Response.StatusCode.value__ }
+
+# Invalid pet id: 400
+try {
+  Invoke-RestMethod -Method GET "$baseUrl/api/clinic/patients/not-a-uuid" -Headers $clinicHeaders
+} catch { $_.Exception.Response.StatusCode.value__ }
+
+# Invalid species filter: 400
+try {
+  Invoke-RestMethod -Method GET "$baseUrl/api/clinic/patients?species=bird" -Headers $clinicHeaders
+} catch { $_.Exception.Response.StatusCode.value__ }
+
+# Invalid limit: 400
+try {
+  Invoke-RestMethod -Method GET "$baseUrl/api/clinic/patients?limit=101" -Headers $clinicHeaders
+} catch { $_.Exception.Response.StatusCode.value__ }
+```
+
+To verify cross-clinic privacy, register/login a second clinic, create its
+clinic profile, and call:
+
+```powershell
+try {
+  Invoke-RestMethod -Method GET "$baseUrl/api/clinic/patients/$petId" -Headers $secondClinicHeaders
+} catch { $_.Exception.Response.StatusCode.value__ } # Expected: 404
+```
+
 ## Negative tests
 
 ### No token returns 401

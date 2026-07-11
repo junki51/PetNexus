@@ -15,6 +15,8 @@
 | [Sprint 7: Public Pet ID + Clinic Lookup](./sprint-07-public-pet-id-clinic-lookup.md) | โค้ดเสร็จและ local smoke test ผ่าน | Backend-generated public pet IDs และ privacy-limited clinic lookup |
 | [Sprint 8: Appointment Calendar Foundation](./sprint-08-appointment-calendar-foundation.md) | โค้ดเสร็จและ local smoke test ผ่าน | Owner/clinic appointment APIs, ownership scope และ calendar filters |
 
+| [Sprint 9: Clinic Patient List Backend](./sprint-09-clinic-patient-list.md) | Code complete and automated tests passed | Clinic patient list/detail APIs derived from non-cancelled appointments |
+
 ## Deployment updates
 
 - [Render: DATABASE_URL support](./render-database-url.md)

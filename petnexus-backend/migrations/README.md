@@ -19,6 +19,8 @@ Startup migration behavior:
   non-null IDs after backfill
 - creates `appointments` with guarded ownership foreign keys, checks, and
   calendar lookup indexes
+- Sprint 9 adds no migration because clinic patients are derived from
+  non-cancelled appointments
 - avoids GORM `AutoMigrate` so startup will not try to drop or
   rewrite missing constraints on an existing database
 - stops application startup if migration fails
@@ -38,6 +40,10 @@ Current migrations:
    backfills existing pets, creates its unique index, and enforces not-null.
 7. `007_create_appointments.sql` creates the Sprint 8 appointment calendar
    foundation, indexes, foreign keys, and allowed-value checks.
+
+No `008` migration exists for Sprint 9. Clinic patient list/detail data is
+derived from the existing appointment relationship and does not require a
+separate `patients` table.
 
 The SQL files can still be applied manually in numeric order. PowerShell commands are documented in the project `README.md`.
 

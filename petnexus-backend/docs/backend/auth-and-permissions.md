@@ -72,6 +72,8 @@ Clinic roles receive 403 `FORBIDDEN_ROLE` on these routes.
 - `GET /api/clinic/appointments/:id`
 - `PATCH /api/clinic/appointments/:id/status`
 - `PATCH /api/clinic/appointments/:id/cancel`
+- `GET /api/clinic/patients`
+- `GET /api/clinic/patients/:petId`
 
 Allowed roles are canonical `clinic` and legacy-compatible `clinic_staff`.
 Owner receives 403 `FORBIDDEN_ROLE`.
@@ -79,6 +81,9 @@ Owner receives 403 `FORBIDDEN_ROLE`.
 Clinic pet lookup accepts exactly one query parameter. It exposes only limited
 pet identity, breed data, owner display name, and a masked phone number. It does
 not grant clinic access to the pet or expose medical/private owner data.
+
+Clinic patients are derived from non-cancelled appointments for the current
+clinic profile. Cross-clinic or unrelated pet access returns 404.
 
 ## Identity and ownership rules
 
@@ -91,6 +96,8 @@ not grant clinic access to the pet or expose medical/private owner data.
 - Another owner's pet returns 404 rather than exposing its existence.
 - Owner and clinic appointment repositories always scope detail/update queries
   by the JWT-derived profile ID; cross-account appointments return 404.
+- Clinic patient list/detail queries are scoped by the JWT-derived clinic
+  profile ID; unrelated pets and other clinics' patients return 404.
 
 ## Common authorization-related status codes
 

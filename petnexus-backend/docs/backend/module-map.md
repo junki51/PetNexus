@@ -85,10 +85,24 @@
   pets, cross-scope access returns 404, and calendar results sort by
   `scheduled_at` ascending.
 
+## Clinic Patient module
+
+- **Purpose:** Provide real data for the Clinic Web Patients page.
+- **Main tables:** No `patients` table. Data is derived from `appointments`,
+  `pets`, `owner_profiles`, and optional `breeds`.
+- **Endpoints:** GET `/api/clinic/patients`, GET
+  `/api/clinic/patients/:petId`.
+- **Access:** Canonical `clinic` role and legacy-compatible `clinic_staff`.
+- **Rules:** The current clinic profile is resolved from JWT; a patient is a
+  unique pet with at least one non-cancelled appointment for that clinic;
+  cross-clinic or unrelated pet access returns 404; owner phone is masked and
+  internal owner/user/profile IDs are not returned.
+
 ## Shared infrastructure
 
 - JWT authentication middleware injects user ID and role into Gin context.
 - Role middleware checks route allow-lists.
 - Response helper enforces one JSON envelope.
 - Typed application errors keep internal causes out of responses.
-- Startup SQL creates only currently implemented Sprint 1–8 schema.
+- Startup SQL creates only currently implemented Sprint 1-9 schema; Sprint 9
+  does not add schema because patients are derived from appointments.

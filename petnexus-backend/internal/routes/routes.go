@@ -24,6 +24,7 @@ type Dependencies struct {
 	ClinicLookupHandler      *handlers.ClinicPetLookupHandler
 	OwnerAppointmentHandler  *handlers.OwnerAppointmentHandler
 	ClinicAppointmentHandler *handlers.ClinicAppointmentHandler
+	ClinicPatientHandler     *handlers.ClinicPatientHandler
 }
 
 // Register attaches all currently available routes to the router.
@@ -75,6 +76,8 @@ func Register(router *gin.Engine, deps Dependencies) {
 	clinic.GET("/profile", deps.ClinicHandler.GetMyClinicProfile)
 	clinic.PATCH("/profile", deps.ClinicHandler.UpdateMyClinicProfile)
 	clinic.GET("/pet-lookup", deps.ClinicLookupHandler.LookupPet)
+	clinic.GET("/patients", deps.ClinicPatientHandler.ListPatients)
+	clinic.GET("/patients/:petId", deps.ClinicPatientHandler.GetPatient)
 	clinic.POST("/appointments", deps.ClinicAppointmentHandler.CreateAppointment)
 	clinic.GET("/appointments", deps.ClinicAppointmentHandler.ListAppointments)
 	clinic.GET("/appointments/:id", deps.ClinicAppointmentHandler.GetAppointment)

@@ -3,7 +3,8 @@
 PostgreSQL schema is created by guarded startup SQL in
 `internal/database/migrate.go`. Manual equivalents are numbered in
 `migrations/001` through `007`. GORM AutoMigrate is intentionally not used for
-existing tables.
+existing tables. Sprint 9 adds no migration because clinic patients are derived
+from appointment relationships.
 
 ## Relationship overview
 
@@ -189,3 +190,19 @@ Rules:
   optional creator user
 - indexes cover each ownership key, pet, scheduled time, status, plus
   clinic/time and owner/time composites
+
+## Derived clinic patients
+
+**Purpose:** Backend query foundation for the Clinic Web Patients page.
+
+There is no `patients` table. A clinic patient is derived as:
+
+```text
+unique appointments.pet_id
+where appointments.clinic_profile_id = current clinic profile
+and appointments.status <> 'cancelled'
+```
+
+The repository joins the derived pet IDs to `pets`, `owner_profiles`, and
+`breeds` for safe patient list/detail responses. Cross-clinic access is hidden
+as 404 at the service layer.

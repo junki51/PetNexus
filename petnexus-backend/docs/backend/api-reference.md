@@ -564,3 +564,130 @@ Cancels one current-clinic appointment and is idempotent.
 
 Responses omit internal owner/clinic profile ownership IDs, creator user ID,
 password data, JWT claims, private owner profile data, and medical data.
+
+## Clinic Patients
+
+Clinic patient routes require JWT and a clinic-side role: canonical `clinic`,
+with legacy `clinic_staff` retained for compatibility.
+
+For Sprint 9, a clinic patient is a unique pet that has at least one
+non-cancelled appointment with the authenticated clinic profile. No separate
+`patients` table exists.
+
+### `GET /api/clinic/patients`
+
+- **Purpose:** List patients for the current clinic's Patients page.
+- **Auth/role:** JWT required; `clinic` or `clinic_staff`.
+- **Success:** 200; `data` is an array of clinic patient list items.
+- **Common errors:** 400 invalid query, 401, 403, 404
+  `CLINIC_PROFILE_REQUIRED`, 500.
+- **Backend notes:** The backend resolves `clinic_profile_id` from JWT and
+  scopes the list by appointments owned by that clinic.
+
+Supported query parameters:
+
+| Query | Description |
+| --- | --- |
+| `q` | Optional search by pet name or `public_pet_id`; max 100 characters |
+| `species` | Optional `dog` or `cat` |
+| `status` | Optional latest computed non-cancelled appointment status |
+| `limit` | Optional positive integer; default 20, max 100 |
+| `offset` | Optional non-negative integer; default 0 |
+| `sort` | Optional sort key; default `latest_appointment_desc` |
+
+Supported `sort` values:
+
+```text
+latest_appointment_desc
+latest_appointment_asc
+name_asc
+name_desc
+next_appointment_asc
+```
+
+Example list item:
+
+```json
+{
+  "pet": {
+    "id": "pet-uuid",
+    "public_pet_id": "PNX-PET-A1B2C3",
+    "name": "Milo",
+    "species": "dog",
+    "avatar_url": null,
+    "breed": {
+      "id": "breed-uuid",
+      "species": "dog",
+      "name": "Golden Retriever",
+      "name_th": null
+    }
+  },
+  "owner": {
+    "display_name": "Sunny Example",
+    "masked_phone": "081****678"
+  },
+  "appointment_summary": {
+    "total_appointments": 2,
+    "last_appointment_at": "2026-07-12T03:00:00Z",
+    "next_appointment_at": "2026-07-15T03:00:00Z",
+    "latest_status": "scheduled"
+  },
+  "first_seen_at": "2026-07-01T03:00:00Z"
+}
+```
+
+### `GET /api/clinic/patients/:petId`
+
+- **Purpose:** Fetch one patient detail summary for the current clinic.
+- **Auth/role:** JWT required; `clinic` or `clinic_staff`.
+- **Path:** `:petId` must be a UUID.
+- **Success:** 200; `data` is a clinic patient detail object.
+- **Common errors:** 400 `INVALID_PET_ID`, 401, 403, 404
+  `CLINIC_PROFILE_REQUIRED`/`CLINIC_PATIENT_NOT_FOUND`, 500.
+- **Backend notes:** A pet from another clinic or a pet with no non-cancelled
+  appointment relationship to this clinic returns 404.
+
+Example detail data:
+
+```json
+{
+  "pet": {
+    "id": "pet-uuid",
+    "public_pet_id": "PNX-PET-A1B2C3",
+    "name": "Milo",
+    "species": "dog",
+    "gender": "male",
+    "date_of_birth": "2022-05-10",
+    "weight_kg": 12.5,
+    "microchip_id": "MC-123456789",
+    "avatar_url": null,
+    "color": "Brown",
+    "distinctive_marks": "White spot on chest",
+    "is_neutered": true,
+    "breed": null
+  },
+  "owner": {
+    "display_name": "Sunny Example",
+    "masked_phone": "081****678"
+  },
+  "clinic_relationship": {
+    "first_appointment_at": "2026-07-01T03:00:00Z",
+    "last_appointment_at": "2026-07-12T03:00:00Z",
+    "next_appointment_at": "2026-07-15T03:00:00Z",
+    "total_appointments": 2
+  },
+  "recent_appointments": [
+    {
+      "id": "appointment-uuid",
+      "scheduled_at": "2026-07-12T03:00:00Z",
+      "appointment_type": "checkup",
+      "status": "scheduled",
+      "title": "Annual checkup"
+    }
+  ]
+}
+```
+
+Clinic Patients responses deliberately omit `user_id`, `owner_profile_id`,
+`clinic_profile_id`, password data, JWT claims, full owner address, medical
+records, visits, reports, notifications, payment, and staff schedule data.

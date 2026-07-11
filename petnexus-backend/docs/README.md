@@ -11,7 +11,7 @@ below are the current backend-oriented entry points.
 | [Backend overview](./backend/backend-overview.md) | High-level product and completed backend scope |
 | [Architecture](./backend/architecture.md) | Layered architecture, dependency direction, and conventions |
 | [Module map](./backend/module-map.md) | Current modules, responsibilities, tables, endpoints, and access rules |
-| [API reference](./backend/api-reference.md) | Current Sprint 1–8 HTTP API contracts |
+| [API reference](./backend/api-reference.md) | Current Sprint 1-9 HTTP API contracts |
 | [Database schema](./backend/database-schema.md) | Implemented PostgreSQL tables, relationships, constraints, and indexes |
 | [Auth and permissions](./backend/auth-and-permissions.md) | JWT, roles, public/protected routes, and ownership rules |
 | [Testing guide](./backend/testing-guide.md) | Formatting, tests, local API checks, and Render smoke tests |
@@ -20,7 +20,8 @@ below are the current backend-oriented entry points.
 
 ## Sprint summary
 
-- [Sprint 1–8 summary](./sprints/sprint-1-to-8-summary.md)
+- [Sprint 1-9 summary](./sprints/sprint-1-to-9-summary.md)
+- [Sprint 1-8 summary](./sprints/sprint-1-to-8-summary.md)
 - Detailed historical logs remain in [progress](./progress/README.md).
 
 ## Existing reference material
